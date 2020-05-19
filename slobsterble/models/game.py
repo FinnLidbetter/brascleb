@@ -4,6 +4,7 @@
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
+from slobsterble.models.mixins import ModelMixin
 
 
 rack = db.Table('rack',
@@ -39,9 +40,8 @@ bag_tiles = db.Table('bag_tiles',
 WORD_LENGTH_MAX = 21
 
 
-class GamePlayer(db.Model):
+class GamePlayer(db.Model, ModelMixin):
     """A player in a game."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     player_id = db.Column(db.Integer,
                           db.ForeignKey('player.id'),
                           nullable=False)
@@ -72,9 +72,8 @@ class GamePlayer(db.Model):
         return '(%s) %s: %d' % (self.game, self.player, self.score)
 
 
-class Game(db.Model):
+class Game(db.Model, ModelMixin):
     """A game."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     board_state = db.relationship(
         'PlayedTile',
         secondary=board_state,
@@ -102,16 +101,15 @@ class Game(db.Model):
                             doc='The current turn number of the game.')
 
 
-class Move(db.Model):
+class Move(db.Model, ModelMixin):
     """A played word in a turn and its score."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     game_player_id = db.Column(db.Integer,
                                db.ForeignKey('game_player.id'),
                                nullable=False)
     game_player = relationship('GamePlayer',
                                backref=db.backref('moves', lazy=True),
                                doc='The player that played this move.')
-    primary_word = db.Column(db.String(WORD_LENGTH_MAX), nullable=False,
+    primary_word = db.Column(db.String(WORD_LENGTH_MAX), nullable=True,
                              doc='The word created along the axis on which '
                                  'multiple tiles were played. Defaults to '
                                  'the word on the horizontal axis if a '
@@ -120,6 +118,11 @@ class Move(db.Model):
         db.String(WORD_LENGTH_MAX * (WORD_LENGTH_MAX + 1)),
         nullable=False,
         doc='Other words created in a single tile. Words are comma-separated.')
+    tiles_exchanged = db.Column(db.Integer,
+                                nullable=False,
+                                default=0,
+                                doc='The number of tiles that were exchanged '
+                                    'in this turn.')
     turn_number = db.Column(db.Integer,
                             nullable=False,
                             doc='The turn number of the game that this move '
@@ -127,7 +130,7 @@ class Move(db.Model):
     score = db.Column(db.Integer,
                       nullable=False,
                       doc='The number of points scored with this move.')
-    time_played = db.Column(db.DateTime,
+    played_time = db.Column(db.DateTime,
                             nullable=False,
                             doc='The date and time that this move was played.')
 
