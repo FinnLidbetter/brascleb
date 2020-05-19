@@ -1,6 +1,8 @@
 """Models relating to the dictionary and playable words."""
 
 from slobsterble import db
+from slobsterble.models.mixins import ModelMixin
+
 
 entries = db.Table(
     'entries',
@@ -14,9 +16,8 @@ entries = db.Table(
               primary_key=True))
 
 
-class Dictionary(db.Model):
+class Dictionary(db.Model, ModelMixin):
     """A collection of words."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(100),
                      unique=True,
                      nullable=False,
@@ -31,9 +32,8 @@ class Dictionary(db.Model):
         return self.name
 
 
-class Entry(db.Model):
+class Entry(db.Model, ModelMixin):
     """A word and its definition(s)."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     word = db.Column(db.String(30), index=True, unique=True, nullable=False)
     definition = db.Column(
         db.Text,

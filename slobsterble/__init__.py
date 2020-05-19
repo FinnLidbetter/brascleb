@@ -1,48 +1,30 @@
-import os
-
 import click
-from flask import Flask
+from flask import Flask, render_template
 from flask.cli import with_appcontext
 from flask_admin import Admin
-from flask_admin.contrib.sqla import ModelView
+from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash
 
+import slobsterble.settings
+from slobsterble.utilities import SlobsterbleModelView
 
 db = SQLAlchemy()
 admin = Admin()
+login_manager = LoginManager()
 
 
-def create_app(test_config=None):
+def create_app():
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
 
-    # Some deploy systems set the database url in the environ.
-    db_url = os.environ.get("DATABASE_URL")
-
-    if db_url is None:
-        # Default to a sqlite database in the instance folder.
-        db_url = 'sqlite:///' + os.path.join(app.instance_path,
-                                             'slobsterble.sqlite')
-        # Ensure the instance folder exists.
-        os.makedirs(app.instance_path, exist_ok=True)
-
-    app.config.from_mapping(
-        # Default secret that should be overridden in environ or config.
-        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
-        SQLALCHEMY_DATABASE_URI=db_url,
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    )
-
-    if test_config is None:
-        # Load the instance config, if it exists, when not testing.
-        app.config.from_pyfile('config.py', silent=True)
-    else:
-        # Load the test config if passed in.
-        app.config.update(test_config)
+    app.config.from_object(slobsterble.settings)
 
     # Initialize Flask-SQLAlchemy and the init-db command.
     db.init_app(app)
     app.cli.add_command(init_db_command)
+
+    login_manager.init_app(app)
 
     # Add admin model views.
     from slobsterble.models import (
@@ -53,29 +35,44 @@ def create_app(test_config=None):
         Move,
         PlayedTile,
         Player,
+        Role,
         Tile,
         TileCount,
         User,
     )
     admin.init_app(app)
-    admin.add_view(ModelView(Game, db.session))
-    admin.add_view(ModelView(GamePlayer, db.session))
-    admin.add_view(ModelView(Move, db.session))
-    admin.add_view(ModelView(Tile, db.session))
-    admin.add_view(ModelView(TileCount, db.session))
-    admin.add_view(ModelView(PlayedTile, db.session))
-    admin.add_view(ModelView(User, db.session))
-    admin.add_view(ModelView(Player, db.session))
-    admin.add_view(ModelView(Dictionary, db.session))
-    admin.add_view(ModelView(Entry, db.session))
+    admin.add_view(SlobsterbleModelView(Dictionary, db.session))
+    admin.add_view(SlobsterbleModelView(Entry, db.session))
+    admin.add_view(SlobsterbleModelView(Game, db.session))
+    admin.add_view(SlobsterbleModelView(GamePlayer, db.session))
+    admin.add_view(SlobsterbleModelView(Move, db.session))
+    admin.add_view(SlobsterbleModelView(Role, db.session))
+    admin.add_view(SlobsterbleModelView(Tile, db.session))
+    admin.add_view(SlobsterbleModelView(TileCount, db.session))
+    admin.add_view(SlobsterbleModelView(PlayedTile, db.session))
+    admin.add_view(SlobsterbleModelView(Player, db.session))
+    admin.add_view(SlobsterbleModelView(User, db.session))
+
+    with app.app_context():
+        admin_user_exists = User.query.filter_by(
+            username=app.config['ADMIN_USERNAME']).one_or_none() is not None
+        if not admin_user_exists:
+            admin_user = User(
+                username=app.config['ADMIN_USERNAME'],
+                password_hash=generate_password_hash(
+                    app.config['ADMIN_PASSWORD']),
+                activated=True)
+            db.session.add(admin_user)
+            db.session.commit()
 
     # Apply the blueprints to the app.
     from slobsterble import auth
 
     app.register_blueprint(auth.bp)
 
-    # Make "index" point at "/", which is handled by "blog.index"
-    app.add_url_rule('/', endpoint='index')
+    def index():
+        return render_template('index.html', title='Slobsterble')
+    app.add_url_rule('/', endpoint='index', view_func=index)
     return app
 
 

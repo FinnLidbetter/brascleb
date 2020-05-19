@@ -1,9 +1,14 @@
+import os
+import sys
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import engine_from_config, MetaData
 from sqlalchemy import pool
 
-from alembic import context
+sys.path.append(os.getcwd())
+from slobsterble import models
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,10 +22,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-import os
-import sys
-sys.path.append(os.getcwd())
-from slobsterble import models
+
 
 def combine_metadata():
     m = MetaData()
@@ -29,6 +31,7 @@ def combine_metadata():
         for t in model_metadata.tables.values():
             t.tometadata(m)
     return m
+
 
 target_metadata = combine_metadata()
 
