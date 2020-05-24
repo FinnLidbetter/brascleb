@@ -4,7 +4,7 @@
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
-from slobsterble.models.mixins import ModelMixin
+from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 
 rack = db.Table('rack',
@@ -40,8 +40,10 @@ bag_tiles = db.Table('bag_tiles',
 WORD_LENGTH_MAX = 21
 
 
-class GamePlayer(db.Model, ModelMixin):
+class GamePlayer(db.Model, ModelMixin, ModelSerializer):
     """A player in a game."""
+    serialize_exclude_fields = ['game', 'game_id', 'player_id']
+
     player_id = db.Column(db.Integer,
                           db.ForeignKey('player.id'),
                           nullable=False)
@@ -72,8 +74,11 @@ class GamePlayer(db.Model, ModelMixin):
         return '(%s) %s: %d' % (self.game, self.player, self.score)
 
 
-class Game(db.Model, ModelMixin):
+class Game(db.Model, ModelMixin, ModelSerializer):
     """A game."""
+    serialize_exclude_fields = ['dictionary_id']
+    serialize_include_fields = ['num_players', 'whose_turn']
+
     board_state = db.relationship(
         'PlayedTile',
         secondary=board_state,
@@ -100,8 +105,20 @@ class Game(db.Model, ModelMixin):
                             default=0,
                             doc='The current turn number of the game.')
 
+    @property
+    def num_players(self):
+        return len(self.game_players)
 
-class Move(db.Model, ModelMixin):
+    @property
+    def whose_turn(self):
+        turn_order_number = self.turn_number % len(self.game_players)
+        for game_player in self.game_players:
+            if game_player.turn_order == turn_order_number:
+                return game_player.player.display_name
+        return 'Unknown'
+
+
+class Move(db.Model, ModelMixin, ModelSerializer):
     """A played word in a turn and its score."""
     game_player_id = db.Column(db.Integer,
                                db.ForeignKey('game_player.id'),

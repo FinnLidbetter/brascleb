@@ -3,10 +3,10 @@
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
-from slobsterble.models.mixins import ModelMixin
+from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 
-class Tile(db.Model, ModelMixin):
+class Tile(db.Model, ModelMixin, ModelSerializer):
     """A letter and its value, possibly blank."""
     letter = db.Column(db.String(1),
                        nullable=True,
@@ -26,7 +26,7 @@ class Tile(db.Model, ModelMixin):
         return self.letter
 
 
-class TileCount(db.Model, ModelMixin):
+class TileCount(db.Model, ModelMixin, ModelSerializer):
     """A quantity of a particular tile."""
     count = db.Column(db.Integer,
                       nullable=False,
@@ -38,7 +38,7 @@ class TileCount(db.Model, ModelMixin):
         return '%s x %d' % (str(self.tile), self.count)
 
 
-class PlayedTile(db.Model, ModelMixin):
+class PlayedTile(db.Model, ModelMixin, ModelSerializer):
     """The location of a tile played on a board."""
     tile_id = db.Column(db.Integer, db.ForeignKey('tile.id'), nullable=False)
     tile = relationship('Tile', doc='The tile played.')

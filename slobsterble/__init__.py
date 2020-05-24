@@ -67,8 +67,10 @@ def create_app():
 
     # Apply the blueprints to the app.
     from slobsterble import auth
+    from slobsterble import views
 
     app.register_blueprint(auth.bp)
+    app.register_blueprint(views.bp)
 
     def index():
         return render_template('index.html', title='Slobsterble')
