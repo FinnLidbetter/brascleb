@@ -17,7 +17,6 @@ entries = db.Table(
 
 class Dictionary(db.Model, ModelMixin, ModelSerializer):
     """A collection of words."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(100),
                      unique=True,
                      nullable=False,
@@ -34,7 +33,6 @@ class Dictionary(db.Model, ModelMixin, ModelSerializer):
 
 class Entry(db.Model, ModelMixin, ModelSerializer):
     """A word and its definition(s)."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     word = db.Column(db.String(30), index=True, unique=True, nullable=False)
     definition = db.Column(
         db.Text,

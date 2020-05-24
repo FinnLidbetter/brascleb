@@ -1,6 +1,5 @@
 """Models related to information about tiles."""
 
-
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
@@ -9,23 +8,31 @@ from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 class Tile(db.Model, ModelMixin, ModelSerializer):
     """A letter and its value, possibly blank."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
-    letter = db.Column(db.String(1), nullable=False)
-    is_blank = db.Column(db.Boolean, nullable=False, default=False)
-    value = db.Column(db.Integer, nullable=False)
+    letter = db.Column(db.String(1),
+                       nullable=True,
+                       doc='The letter to display on this tile (possibly '
+                           'None).')
+    is_blank = db.Column(db.Boolean,
+                         nullable=False,
+                         default=False,
+                         doc='If True, this tile represents a blank tile.')
+    value = db.Column(db.Integer,
+                      nullable=False,
+                      doc='The number of points scored by playing this tile.')
 
     def __repr__(self):
         if self.is_blank:
-            return '(%s)' % self.letter
+            return '(%s)' % self.letter if self.letter else ''
         return self.letter
 
 
 class TileCount(db.Model, ModelMixin, ModelSerializer):
     """A quantity of a particular tile."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
-    count = db.Column(db.Integer, nullable=False)
+    count = db.Column(db.Integer,
+                      nullable=False,
+                      doc='The number of copies of the tile.')
     tile_id = db.Column(db.Integer, db.ForeignKey('tile.id'), nullable=False)
-    tile = relationship('Tile')
+    tile = relationship('Tile', doc='The tile being copied.')
 
     def __repr__(self):
         return '%s x %d' % (str(self.tile), self.count)
@@ -33,11 +40,15 @@ class TileCount(db.Model, ModelMixin, ModelSerializer):
 
 class PlayedTile(db.Model, ModelMixin, ModelSerializer):
     """The location of a tile played on a board."""
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
     tile_id = db.Column(db.Integer, db.ForeignKey('tile.id'), nullable=False)
-    tile = relationship('Tile')
-    row = db.Column(db.Integer, nullable=False)
-    column = db.Column(db.Integer, nullable=False)
+    tile = relationship('Tile', doc='The tile played.')
+    row = db.Column(db.Integer,
+                    nullable=False,
+                    doc='The 0-based row index. The top row is row 0.')
+    column = db.Column(db.Integer,
+                       nullable=False,
+                       doc='The 0-based column index. The left column '
+                           'is column 0.')
 
     def __repr__(self):
         return '%s at (%d, %d)' % (str(self.tile), self.row, self.column)

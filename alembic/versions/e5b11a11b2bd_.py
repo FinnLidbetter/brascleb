@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: cc1e24a58cbb
+Revision ID: e5b11a11b2bd
 Revises: 
-Create Date: 2020-05-23 20:34:41.823616
+Create Date: 2020-05-24 16:05:20.062536
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cc1e24a58cbb'
+revision = 'e5b11a11b2bd'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -47,7 +47,7 @@ def upgrade():
     sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('letter', sa.String(length=1), nullable=False),
+    sa.Column('letter', sa.String(length=1), nullable=True),
     sa.Column('is_blank', sa.Boolean(), nullable=False),
     sa.Column('value', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -152,11 +152,12 @@ def upgrade():
     sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('game_player_id', sa.Integer(), nullable=False),
-    sa.Column('primary_word', sa.String(length=21), nullable=False),
+    sa.Column('primary_word', sa.String(length=21), nullable=True),
     sa.Column('secondary_words', sa.String(length=462), nullable=False),
+    sa.Column('tiles_exchanged', sa.Integer(), nullable=False),
     sa.Column('turn_number', sa.Integer(), nullable=False),
     sa.Column('score', sa.Integer(), nullable=False),
-    sa.Column('time_played', sa.DateTime(), nullable=False),
+    sa.Column('played_time', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['game_player_id'], ['game_player.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
