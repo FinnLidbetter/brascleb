@@ -4,7 +4,7 @@
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
-from slobsterble.models.mixins import ModelMixin
+from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 
 rack = db.Table('rack',
@@ -40,8 +40,11 @@ bag_tiles = db.Table('bag_tiles',
 WORD_LENGTH_MAX = 21
 
 
-class GamePlayer(db.Model, ModelMixin):
+class GamePlayer(db.Model, ModelMixin, ModelSerializer):
     """A player in a game."""
+    serialize_exclude_fields = ['game', 'game_id', 'player_id']
+
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
     player_id = db.Column(db.Integer,
                           db.ForeignKey('player.id'),
                           nullable=False)
@@ -72,8 +75,12 @@ class GamePlayer(db.Model, ModelMixin):
         return '(%s) %s: %d' % (self.game, self.player, self.score)
 
 
-class Game(db.Model, ModelMixin):
+class Game(db.Model, ModelMixin, ModelSerializer):
     """A game."""
+    serialize_exclude_fields = ['dictionary_id']
+    serialize_include_fields = ['num_players', 'whose_turn']
+
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
     board_state = db.relationship(
         'PlayedTile',
         secondary=board_state,
@@ -100,16 +107,29 @@ class Game(db.Model, ModelMixin):
                             default=0,
                             doc='The current turn number of the game.')
 
+    @property
+    def num_players(self):
+        return len(self.game_players)
 
-class Move(db.Model, ModelMixin):
+    @property
+    def whose_turn(self):
+        turn_order_number = self.turn_number % len(self.game_players)
+        for game_player in self.game_players:
+            if game_player.turn_order == turn_order_number:
+                return game_player.player.display_name
+        return 'Unknown'
+
+
+class Move(db.Model, ModelMixin, ModelSerializer):
     """A played word in a turn and its score."""
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
     game_player_id = db.Column(db.Integer,
                                db.ForeignKey('game_player.id'),
                                nullable=False)
     game_player = relationship('GamePlayer',
                                backref=db.backref('moves', lazy=True),
                                doc='The player that played this move.')
-    primary_word = db.Column(db.String(WORD_LENGTH_MAX), nullable=True,
+    primary_word = db.Column(db.String(WORD_LENGTH_MAX), nullable=False,
                              doc='The word created along the axis on which '
                                  'multiple tiles were played. Defaults to '
                                  'the word on the horizontal axis if a '
@@ -118,11 +138,6 @@ class Move(db.Model, ModelMixin):
         db.String(WORD_LENGTH_MAX * (WORD_LENGTH_MAX + 1)),
         nullable=False,
         doc='Other words created in a single tile. Words are comma-separated.')
-    tiles_exchanged = db.Column(db.Integer,
-                                nullable=False,
-                                default=0,
-                                doc='The number of tiles that were exchanged '
-                                    'in this turn.')
     turn_number = db.Column(db.Integer,
                             nullable=False,
                             doc='The turn number of the game that this move '
@@ -130,7 +145,7 @@ class Move(db.Model, ModelMixin):
     score = db.Column(db.Integer,
                       nullable=False,
                       doc='The number of points scored with this move.')
-    played_time = db.Column(db.DateTime,
+    time_played = db.Column(db.DateTime,
                             nullable=False,
                             doc='The date and time that this move was played.')
 

@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from slobsterble import db, login_manager
-from slobsterble.models.mixins import ModelMixin
+from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 
 user_roles = db.Table(
@@ -25,8 +25,12 @@ def load_user(id):
     return User.query.get(int(id))
 
 
-class User(db.Model, UserMixin, ModelMixin):
+class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
     """A user model for authentication purposes."""
+    # The player attribute is an excluded backref to avoid
+    # circular serialization.
+    serialize_exclude_fields = ['password_hash', 'player']
+
     activated = db.Column(db.Boolean(), nullable=False, default=False)
     username = db.Column(db.String(255, collation='NOCASE'),
                          unique=True,
@@ -44,13 +48,15 @@ class User(db.Model, UserMixin, ModelMixin):
         return self.username
 
 
-class Role(db.Model, ModelMixin):
+class Role(db.Model, ModelMixin, ModelSerializer):
     """Model for authentication and restricting access."""
     name = db.Column(db.String(50), unique=True)
 
 
-class Player(db.Model, ModelMixin):
+class Player(db.Model, ModelMixin, ModelSerializer):
     """Non-auth, non-game-specific information about users."""
+    serialize_exclude_fields = ['game_players']
+
     display_name = db.Column(db.String(15), nullable=False)
     wins = db.Column(db.Integer, nullable=False, default=0)
     ties = db.Column(db.Integer, nullable=False, default=0)

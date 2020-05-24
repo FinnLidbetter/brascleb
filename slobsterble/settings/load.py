@@ -17,9 +17,11 @@ def load_config(settings, testing=False):
     config_parsed = config.read([path])
     if not config_parsed:
         path = DEVELOPER_PATH
-    config = configparser.ConfigParser()
+        config = configparser.ConfigParser()
     if testing:
         path = TESTING_PATH
+        config = configparser.ConfigParser()
+    print('Reading config from ' + path)
     config.read_file(open(path))
     sql_dialect = config.get('db', 'SQL_DIALECT')
     database_path = config.get('db', 'DATABASE_PATH')
@@ -28,6 +30,7 @@ def load_config(settings, testing=False):
         grandparent_path, database_path)
     settings.SQLALCHEMY_TRACK_MODIFICATIONS = config.get(
         'db', 'SQLALCHEMY_TRACK_MODIFICATIONS')
+    # settings.SQLALCHEMY_ECHO = config.get('db', 'SQLALCHEMY_ECHO')
     settings.ADMIN_USERNAME = config.get('db', 'ADMIN_USERNAME')
     settings.ADMIN_PASSWORD = config.get('db', 'ADMIN_PASSWORD')
     settings.SECRET_KEY = config.get('flask', 'SECRET_KEY')

@@ -21,5 +21,6 @@ SECRET_KEY = None
 SQL_DIALECT = None
 DATABASE_PATH = None
 SQLALCHEMY_TRACK_MODIFICATIONS = None
+SQLALCHEMY_ECHO = None
 
 load_config(sys.modules[__name__], testing=TESTING)

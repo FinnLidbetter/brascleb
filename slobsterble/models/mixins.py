@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from sqlalchemy import func
+from sqlalchemy.inspection import inspect
 
 from slobsterble import db
 
@@ -25,3 +28,57 @@ class IDPKMixin:
 
 class ModelMixin(IDPKMixin, MetadataMixin):
     """Mixin with all common fields."""
+
+
+class ModelSerializer:
+    """Base model serializer mixin."""
+    # Exclude these fields from all models.
+    base_exclude_fields = ['id', 'created', 'modified']
+    serialize_exclude_fields = []
+
+    # Use serialize_include_fields to override base exclusions.
+    serialize_include_fields = []
+
+    def serialize_type(self, obj, exclusions=None, override_mask=None):
+        """Recursively serialize according to type."""
+        if getattr(obj, 'serialize', None):
+            result = obj.serialize(exclusions, override_mask)
+            return result
+        elif isinstance(obj, list):
+            result = self.serialize_list(obj, exclusions, override_mask)
+            return result
+        elif isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        return str(obj)
+
+    def serialize(self, exclusions=None, override_mask=None):
+        """Serialize model fields recursively subject to exclusions."""
+        model_columns = inspect(self).attrs.keys()
+        result = {}
+        if override_mask is not None and type(self) in override_mask:
+            for column in override_mask[type(self)]:
+                serialized = self.serialize_type(getattr(self, column),
+                                                 exclusions,
+                                                 override_mask)
+                result[column] = serialized
+            return result
+        model_columns += self.serialize_include_fields
+        for column in model_columns:
+            if column in self.base_exclude_fields:
+                continue
+            if column in self.serialize_exclude_fields:
+                continue
+            if exclusions is not None and type(self) in exclusions \
+                    and column in exclusions[type(self)]:
+                continue
+            serialized = self.serialize_type(
+                getattr(self, column), exclusions, override_mask)
+            result[column] = serialized
+
+        return result
+
+    @staticmethod
+    def serialize_list(items, exclusions=None, override_mask=None):
+        """Serialize a list of objects."""
+        return [item.serialize(exclusions, override_mask)
+                for item in items]
