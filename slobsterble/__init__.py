@@ -54,16 +54,17 @@ def create_app():
     admin.add_view(SlobsterbleModelView(User, db.session))
 
     with app.app_context():
-        admin_user_exists = User.query.filter_by(
-            username=app.config['ADMIN_USERNAME']).one_or_none() is not None
-        if not admin_user_exists:
-            admin_user = User(
-                username=app.config['ADMIN_USERNAME'],
-                password_hash=generate_password_hash(
-                    app.config['ADMIN_PASSWORD']),
-                activated=True)
-            db.session.add(admin_user)
-            db.session.commit()
+        if db.engine.dialect.has_table(db.engine, 'User'):
+            admin_user_exists = User.query.filter_by(
+                username=app.config['ADMIN_USERNAME']).one_or_none() is not None
+            if not admin_user_exists:
+                admin_user = User(
+                    username=app.config['ADMIN_USERNAME'],
+                    password_hash=generate_password_hash(
+                        app.config['ADMIN_PASSWORD']),
+                    activated=True)
+                db.session.add(admin_user)
+                db.session.commit()
 
     # Apply the blueprints to the app.
     from slobsterble import auth

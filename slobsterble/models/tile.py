@@ -8,7 +8,7 @@ from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 class Tile(db.Model, ModelMixin, ModelSerializer):
     """A letter and its value, possibly blank."""
-    letter = db.Column(db.String(1),
+    letter = db.Column(db.String(1, collation='NOCASE'),
                        nullable=True,
                        doc='The letter to display on this tile (possibly '
                            'None).')
@@ -35,7 +35,7 @@ class TileCount(db.Model, ModelMixin, ModelSerializer):
     tile = relationship('Tile', doc='The tile being copied.')
 
     def __repr__(self):
-        return '%s x %d' % (str(self.tile), self.count)
+        return '%s x %d' % (self.tile.__repr__(), self.count)
 
 
 class PlayedTile(db.Model, ModelMixin, ModelSerializer):

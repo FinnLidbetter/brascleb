@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}New Game{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <label for="opponents">Opponents</label>
+        {{ form.opponents }}
+        <label for="dictionary">Dictionary</label>
+        {{ form.dictionary }}
+        <input type="submit" value="Start Game">
+    </form>
+{% endblock %}
