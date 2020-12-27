@@ -23,6 +23,7 @@ class IDPKMixin:
     """Mixin for adding an integer ID."""
     id = db.Column(db.Integer,
                    primary_key=True,
+                   autoincrement=True,
                    doc='Integer ID for the model instance.')
 
 

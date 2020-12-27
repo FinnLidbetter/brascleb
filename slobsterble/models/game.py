@@ -1,6 +1,6 @@
 """Models related to games and players in those games."""
 
-
+from sqlalchemy import func, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
@@ -42,6 +42,12 @@ WORD_LENGTH_MAX = 21
 
 class GamePlayer(db.Model, ModelMixin, ModelSerializer):
     """A player in a game."""
+    __tablename__ = 'game_player'
+
+    __table_args__ = (
+        UniqueConstraint("id", "game_id"),
+    )
+
     serialize_exclude_fields = ['game', 'game_id', 'player_id']
 
     player_id = db.Column(db.Integer,
@@ -63,12 +69,7 @@ class GamePlayer(db.Model, ModelMixin, ModelSerializer):
                            nullable=False,
                            doc='A value to indicate when it is this player\'s '
                                'turn.')
-    game_id = db.Column(db.Integer,
-                        db.ForeignKey('game.id'),
-                        nullable=False)
-    game = relationship('Game',
-                        backref=db.backref('game_players', lazy=True),
-                        doc='The game that this player is playing in.')
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
 
     def __repr__(self):
         return '(%s) %s: %d' % (self.game, self.player, self.score)
@@ -76,8 +77,23 @@ class GamePlayer(db.Model, ModelMixin, ModelSerializer):
 
 class Game(db.Model, ModelMixin, ModelSerializer):
     """A game."""
-    serialize_exclude_fields = ['dictionary_id']
-    serialize_include_fields = ['num_players', 'whose_turn']
+    __tablename__ = 'game'
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["id", "game_player_to_play_id"],
+            ["game_player.game_id", "game_player.id"],
+            name="fk_game_player_to_play"
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement='ignore_fk')
+
+    serialize_exclude_fields = ['dictionary_id',
+                                'game_player_to_play_id',
+                                'game_player_to_play']
+    serialize_include_fields = [
+        'num_players', 'whose_turn_name', 'num_tiles_remaining']
 
     board_state = db.relationship(
         'PlayedTile',
@@ -95,6 +111,7 @@ class Game(db.Model, ModelMixin, ModelSerializer):
     dictionary = relationship('Dictionary',
                               doc='The dictionary being used by this game.')
     started = db.Column(db.DateTime,
+                        default=func.now(),
                         nullable=False,
                         doc='The date and time that this game was started.')
     completed = db.Column(db.DateTime,
@@ -104,18 +121,35 @@ class Game(db.Model, ModelMixin, ModelSerializer):
                             nullable=False,
                             default=0,
                             doc='The current turn number of the game.')
+    game_players = relationship(
+        GamePlayer,
+        primaryjoin=id==GamePlayer.game_id,
+        foreign_keys=GamePlayer.game_id,
+        backref="game")
+
+    game_player_to_play_id = db.Column(db.Integer)
+
+    game_player_to_play = relationship(
+        GamePlayer,
+        primaryjoin=game_player_to_play_id==GamePlayer.id,
+        foreign_keys=game_player_to_play_id,
+        post_update=True,
+        doc='The game player whose turn it is to play.')
 
     @property
     def num_players(self):
         return len(self.game_players)
 
     @property
-    def whose_turn(self):
-        turn_order_number = self.turn_number % len(self.game_players)
-        for game_player in self.game_players:
-            if game_player.turn_order == turn_order_number:
-                return game_player.player.display_name
-        return 'Unknown'
+    def whose_turn_name(self):
+        return self.game_player_to_play.player.display_name
+
+    @property
+    def num_tiles_remaining(self):
+        tile_total = 0
+        for tile_count in self.bag_tiles:
+            tile_total += tile_count.count
+        return tile_total
 
 
 class Move(db.Model, ModelMixin, ModelSerializer):
@@ -133,7 +167,7 @@ class Move(db.Model, ModelMixin, ModelSerializer):
                                  'single tile is played.')
     secondary_words = db.Column(
         db.String(WORD_LENGTH_MAX * (WORD_LENGTH_MAX + 1)),
-        nullable=False,
+        nullable=True,
         doc='Other words created in a single tile. Words are comma-separated.')
     tiles_exchanged = db.Column(db.Integer,
                                 nullable=False,
