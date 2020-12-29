@@ -1,5 +1,6 @@
 """Constants for the slobsterble game."""
 
+ACTIVE_GAME_LIMIT = 10
 BINGO_BONUS = 50
 PLAYED_TILE_REQUIRED_FIELDS = [
     'row', 'column', 'letter', 'is_blank', 'is_exchange', 'value']
@@ -56,3 +57,6 @@ TILE_VALUES = {
     'S': 1, 'T': 1, 'U': 1, 'V': 4, 'W': 4, 'X': 8, 'Y': 4, 'Z': 10, None: 0}
 
 TILE_VALUE_MAX = max(TILE_VALUES.values())
+
+FRIEND_KEY_CHARACTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+FRIEND_KEY_LENGTH = 15

@@ -49,7 +49,7 @@ class ModelSerializer:
             result = self.serialize_list(obj, exclusions, override_mask)
             return result
         elif isinstance(obj, datetime):
-            return obj.strftime('%Y-%m-%d %H:%M:%S')
+            return obj.isoformat()
         return str(obj)
 
     def serialize(self, exclusions=None, override_mask=None):

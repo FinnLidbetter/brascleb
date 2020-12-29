@@ -48,9 +48,6 @@ class NewGameForm(FlaskForm):
                              validators=[DataRequired()])
     submit = SubmitField('Start Game')
 
-    def validate_opponents(form, field):
-        return len(field.data) > 3
-
 
 class AddWordForm(FlaskForm):
     """Form for adding a word to a dictionary."""

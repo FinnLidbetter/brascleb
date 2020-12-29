@@ -8,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload, subqueryload
 
 from slobsterble import db
+from slobsterble.constants import ACTIVE_GAME_LIMIT
 from slobsterble.forms import (
     AddWordForm,
     NewGameForm,
@@ -45,8 +46,6 @@ from slobsterble.models import (
     User,
 )
 
-ACTIVE_GAME_LIMIT = 10
-RACK_TILES_MAX = 7
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -181,6 +180,7 @@ def play(game_id):
         return 'Turn played successfully.'
     return render_template('game/play_turn.html', title='Play turn', form=form)
 
+
 @bp.route('/new-game', methods=['GET', 'POST'])
 @login_required
 def new_game():
@@ -211,6 +211,7 @@ def new_game():
         initialize_racks(game.id)
         return 'New game started.'
     return render_template('game/new_game.html', title='New game', form=form)
+
 
 @bp.route('/add-word', methods=['GET', 'POST'])
 @login_required
