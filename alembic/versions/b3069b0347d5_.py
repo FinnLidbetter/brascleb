@@ -24,10 +24,8 @@ def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
     for letter, value in TILE_VALUES.items():
-        if letter == '_':
-            tile = Tile(letter=None, is_blank=True, value=value)
-        else:
-            tile = Tile(letter=letter, is_blank=False, value=value)
+        is_blank = letter is None
+        tile = Tile(letter=None, is_blank=is_blank, value=value)
         if session.query(Tile).filter_by(
                 letter=tile.letter, is_blank=tile.is_blank,
                 value=tile.value).first() is None:
@@ -37,6 +35,13 @@ def upgrade():
             if session.query(TileCount).filter_by(
                     tile_id=tile.id, count=frequency).first() is None:
                 session.add(tile_count)
+    for offset in range(26):
+        letter = chr(ord('A') + offset)
+        tile = Tile(letter=letter, is_blank=True, value=0)
+        if session.query(Tile).filter_by(
+                letter=tile.letter, is_blank=tile.is_blank,
+                value=tile.value).first() is None:
+            session.add(tile)
     session.commit()
     # ### end Alembic commands ###
 

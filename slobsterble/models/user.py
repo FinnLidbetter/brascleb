@@ -78,6 +78,9 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
     __tablename__ = "player"
     serialize_exclude_fields = ['game_players', 'friends']
 
+    # For some reason, defining the self-referential friends
+    # column in this implementation requires having the ID field
+    # directly on the model, rather than inherited from the ModelMixin.
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True,

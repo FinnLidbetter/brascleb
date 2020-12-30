@@ -67,32 +67,32 @@ def _validate_alpha_character(value, require_lower=False,
     return True
 
 
-def _validate_played_tile(played_tile):
+def _validate_played_tile(played_tile, index, errors):
     """Validate that the tile data has the expected types and value ranges."""
     for field in PLAYED_TILE_REQUIRED_FIELDS:
         if field not in played_tile:
-            print('Missing field ' + str(field))
+            errors.append('Tile %d is Missing field %s' % (index, str(field)))
             return False
     if len(played_tile) > len(PLAYED_TILE_REQUIRED_FIELDS):
-        print('Too many fields')
+        errors.append('Tile %d has too many fields' % index)
         return False
     if not _validate_int(played_tile['row'], 0, GAME_ROWS - 1, allow_none=True):
-        print('row index out of range')
+        errors.append('Tile %d has a bad row value.' % index)
         return False
     if not _validate_int(played_tile['column'], 0, GAME_COLUMNS - 1, allow_none=True):
-        print('column index out of range')
+        errors.append('Tile %d has a bad column value.' % index)
         return False
     if not _validate_int(played_tile['value'], 0, TILE_VALUE_MAX, allow_none=False):
-        print('Tile value out of range')
+        errors.append("Tile %d has a bad 'value' value." % index)
         return False
     if not _validate_alpha_character(played_tile['letter'], allow_none=True):
-        print('Tile letter is not alphabetic')
+        errors.append('Tile %d has a non-alphabetic letter.' % index)
         return False
     if not _validate_bool(played_tile['is_blank'], allow_none=False):
-        print('is_blank is not bool')
+        errors.append("Tile %d has non-bool 'is_blank'." % index)
         return False
     if not _validate_bool(played_tile['is_exchange'], allow_none=False):
-        print('is_exchange is not bool')
+        errors.append("Tile %d has non-bool 'is_exchange'." % index)
         return False
     return True
 
@@ -115,20 +115,21 @@ def mutate_data(data):
             played_tile['letter'] = played_tile['letter'].upper()
 
 
-def validate_play_data(data):
+def validate_play_data(data, errors):
     """Validate that the play data is formatted as expected."""
     if 'played_tiles' not in data:
+        errors.append("Missing 'played_tiles' key.")
         return False
     data_played_tiles = data['played_tiles']
     if not isinstance(data_played_tiles, list):
-        return False
-    for played_tile in data_played_tiles:
-        if not _validate_played_tile(played_tile):
+        return False, "'played_tiles' is not a list."
+    for index, played_tile in enumerate(data_played_tiles):
+        if not _validate_played_tile(played_tile, index, errors):
             return False
     return True
 
 
-def validate_plausible_data(data):
+def validate_plausible_data(data, errors):
     """
     Check that tiles are played on a single axis in distinct cells or exchanged.
 
@@ -138,6 +139,8 @@ def validate_plausible_data(data):
     column_set = set()
     exchanged_count = 0
     tiles_played = len(data['played_tiles'])
+    if len(data['played_tiles']) == 0:
+        return True
     for played_tile in data['played_tiles']:
         row_set.add(played_tile['row'])
         column_set.add(played_tile['column'])
@@ -145,11 +148,18 @@ def validate_plausible_data(data):
             exchanged_count += 1
         elif played_tile['letter'] is None:
             # Letter can only be None if it is a blank tile being exchanged.
+            errors.append('Non-exchanged played tile has a blank letter.')
             return False
     if exchanged_count > 0:
-        return exchanged_count == len(data['played_tiles'])
-    return (len(row_set) == 1 and len(column_set) == tiles_played) or (
-        len(column_set) == 1 and len(row_set) == tiles_played)
+        if exchanged_count != len(data['played_tiles']):
+            errors.append('At least one played tile was marked as an exchange.')
+            return False
+        return True
+    if (len(row_set) == 1 and len(column_set) == tiles_played) or (
+            len(column_set) == 1 and len(row_set) == tiles_played):
+        return True
+    errors.append('Tiles not played on a single axis.')
+    return False
 
 
 def validate_user_turn(current_user, game_id):
@@ -213,12 +223,18 @@ def _get_game_grid_values(game_query):
     return grid
 
 
+def _is_exchange_or_pass(data):
+    """Return True iff the there all played tiles are exchanged."""
+    return all([tile['is_exchange'] for tile in data['played_tiles']])
+
+
 def _validate_cells_available(grid, data):
     """Validate that the cells that the tiles are played in are empty."""
     for played_tile in data['played_tiles']:
         if grid[played_tile['row']][played_tile['column']] is not None:
             return False
     return True
+
 
 def _validate_continuous(grid, data):
     """
@@ -237,14 +253,14 @@ def _validate_continuous(grid, data):
         played_column_max = max(column_set)
         row = row_set.pop()
         for column in range(played_column_min, played_column_max + 1):
-            if not column in column_set and grid[row][column] is None:
+            if column not in column_set and grid[row][column] is None:
                 return False
         return True
     played_row_min = min(row_set)
     played_row_max = max(row_set)
     column = column_set.pop()
     for row in range(played_row_min, played_row_max + 1):
-        if not row in row_set and grid[row][column] is None:
+        if row not in row_set and grid[row][column] is None:
             return False
     return True
 
@@ -385,7 +401,7 @@ def _get_invalid_words(words, game_query_result):
     return invalid_words
 
 
-def validate_play(game_id, data):
+def validate_play(game_id, data, errors):
     """
     Return true iff the play is a legal use of the player's tiles.
 
@@ -407,30 +423,38 @@ def validate_play(game_id, data):
         joinedload(Game.dictionary).subqueryload(Dictionary.entries))
     game_query_result = game_query.first()
     if not _validate_player_has_tiles(game_query_result, data):
-        return False, 'You do not have those tiles available to play.'
+        errors.append('Player attempted to use a tile that they do not have.')
+        return False, None, []
+    if _is_exchange_or_pass(data):
+        return True, None, []
     game_grid = _get_game_grid_letters(game_query_result)
     if not _validate_cells_available(game_grid, data):
-        return False, 'There is already a tile in one of those spaces.'
+        errors.append('Player attempted to play in an occupied space.')
+        return False, None, []
     if not _validate_continuous(game_grid, data):
-        return False, 'Your tiles are not placed continuously.'
+        errors.append('Your tiles were not played continuously.')
+        return False, None, []
     if not _is_first_turn(data) and not _validate_connects(game_grid, data):
-        return False, 'Your tiles do not join onto the played words correctly.'
+        errors.append('Your tiles do not join onto the played words correctly.')
+        return False, None, []
     words_played, primary_word = _get_words(game_grid, data)
     invalid_words = _get_invalid_words(words_played, game_query_result)
     if invalid_words:
-        return False, ', '.join(invalid_words) + ' are not in the dictionary.'
+        for invalid_word in invalid_words:
+            errors.append('%s is not in the dictionary.' % invalid_word)
+        return False, None, []
     # Move the primary word to the front of the list.
     for word_index in range(len(words_played)):
         if words_played[word_index] == primary_word:
             words_played[0], words_played[word_index] = \
                 words_played[word_index], words_played[0]
             break
-    return True, words_played
+    return True, primary_word, words_played[1:]
 
 
 def score_play(game_id, data):
     """Get the score of the play."""
-    if data['played_tiles'][0]['is_exchange']:
+    if not data['played_tiles'] or data['played_tiles'][0]['is_exchange']:
         return 0
     game_query = db.session.query(Game).filter(Game.id == game_id).outerjoin(
         Game.board_state).outerjoin(PlayedTile.tile).options(
@@ -502,8 +526,8 @@ def place_tiles(game_id, data):
 
     Note that this function does not update the player's rack state.
     """
-    if data['played_tiles'][0]['is_exchange']:
-        # If the turn was an exchange turn then there are no tiles to place.
+    if not data['played_tiles'] or data['played_tiles'][0]['is_exchange']:
+        # If the turn was an exchange or pass then there are no tiles to place.
         return
     game = db.session.query(Game).filter(Game.id == game_id).options(
         subqueryload(Game.board_state)).first()
@@ -549,29 +573,30 @@ def add_turn_score_and_move(game_id, turn_score,
                     played_time=func.now())
     db.session.add(move)
 
+
 def draw_tiles(game_id, data):
     """Remove tiles from the rack and draw tiles from the bag."""
     game = db.session.query(Game).filter(Game.id == game_id).options(
-        subqueryload(Game.bag_tiles)).options(joinedload(
-        Game.game_player_to_play).subqueryload(GamePlayer.rack)).first()
+        subqueryload(Game.bag_tiles)).options(
+        joinedload(Game.game_player_to_play).subqueryload(GamePlayer.rack)).first()
     tile_counts = db.session.query(TileCount).options(
         joinedload(TileCount.tile)).all()
     tile_count_dict = {(tile_count.tile_id, tile_count.count): tile_count
                        for tile_count in tile_counts}
-    tile_dict = {(tile.letter, tile.value): tile_count.tile for
-                 tile_count in tile_counts}
+    tile_dict = {(tile_count.tile.letter, tile_count.tile.value): tile_count.tile
+                 for tile_count in tile_counts}
     bag_tiles_with_repeats = []
     for tile_count in game.bag_tiles:
         for _ in range(tile_count.count):
             bag_tiles_with_repeats.append(tile_count.tile_id)
-    if data['played_tiles'][0]['is_exchange']:
+    if data['played_tiles'] and data['played_tiles'][0]['is_exchange']:
         for played_tile in data['played_tiles']:
             tile_key = (played_tile['letter'], played_tile['value'])
-            tile_id = tile_dict[tile_key]
+            tile_id = tile_dict[tile_key].id
             bag_tiles_with_repeats.append(tile_id)
     num_tiles_to_draw = min(len(data['played_tiles']),
                             len(bag_tiles_with_repeats))
-    chosen_tile_ids = random.choices(bag_tiles_with_repeats, k=num_tiles_to_draw)
+    chosen_tile_ids = random.sample(bag_tiles_with_repeats, k=num_tiles_to_draw)
     rack_tile_counts = game.game_player_to_play.rack
     bag_tile_counts = game.bag_tiles
     rack_state = {tile_count.tile_id: tile_count.count
@@ -582,8 +607,10 @@ def draw_tiles(game_id, data):
         letter = played_tile['letter']
         value = played_tile['value']
         is_blank = played_tile['is_blank']
+        if is_blank:
+            letter = None
         tile_key = (letter, value)
-        tile_id = tile_dict[tile_key]
+        tile_id = tile_dict[tile_key].id
         rack_state[tile_id] -= 1
     for chosen_tile_id in chosen_tile_ids:
         if chosen_tile_id in rack_state:
@@ -595,7 +622,7 @@ def draw_tiles(game_id, data):
     bag_keys_to_remove = []
     for tile_id in rack_state:
         if rack_state[tile_id] == 0:
-            keys_to_remove.append(tile_id)
+            rack_keys_to_remove.append(tile_id)
     for key in rack_keys_to_remove:
         del rack_state[key]
     for tile_id in bag_state:
@@ -614,7 +641,7 @@ def draw_tiles(game_id, data):
     return True
 
 
-def tally_remaining_tiles(game_id, data):
+def tally_remaining_tiles(game_id):
     game = db.session.query(Game).filter(Game.id == game_id).options(
         subqueryload(Game.game_players).subqueryload(
         GamePlayer.rack).joinedload(TileCount.tile)).options(

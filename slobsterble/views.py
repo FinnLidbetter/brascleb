@@ -2,7 +2,7 @@
 import json
 import random
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, Response, jsonify, render_template, request
 from flask_login import current_user, login_required
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, subqueryload
@@ -27,6 +27,7 @@ from slobsterble.turn_controller import (
     mutate_data,
     place_tiles,
     score_play,
+    tally_remaining_tiles,
     validate_plausible_data,
     validate_play,
     validate_play_data,
@@ -67,7 +68,7 @@ def get_active_games():
         override_mask={Game: ['started', 'whose_turn_name', 'game_players', 'id'],
                        GamePlayer: ['score', 'player'],
                        Player: ['display_name']})
-    return jsonify(games=serialized_games)
+    return jsonify({'games': serialized_games})
 
 
 @bp.route('/game/<int:game_id>', methods=['GET'])
@@ -90,14 +91,10 @@ def get_game(game_id):
         GamePlayer.player).joinedload(Player.user))
     if game_query.count() == 0:
         # The game does not exist.
-        # TODO: return HTTP status code.
-        print('Game does not exist')
-        return {}
+        return Response('Game with this ID not found.', status=404)
     if game_query.filter(User.id == current_user.id).count() == 0:
         # The user is not part of this game.
-        # TODO: return HTTP status code.
-        print('User is not authorized')
-        return {}
+        return Response('User is not authorized to access this game.', status=401)
     serialized_game_state = game_query.first().serialize(
         override_mask={Game: ['board_state', 'game_players',
                               'whose_turn_name', 'num_tiles_remaining'],
@@ -115,7 +112,7 @@ def get_game(game_id):
                        TileCount: ['tile', 'count'],
                        Tile: ['letter', 'is_blank', 'value']})
     serialized_game_state['rack'] = serialized_user_rack['rack']
-    return jsonify(game_state=serialized_game_state)
+    return jsonify(serialized_game_state)
 
 
 @bp.route('/game/<int:game_id>/verify-word/<string:word>', methods=['GET'])
@@ -125,14 +122,10 @@ def verify_word(game_id, word):
         Game.game_players).join(GamePlayer.player).join(Player.user)
     if game_query.count() == 0:
         # The game does not exist.
-        # TODO: return HTTP status code.
-        print('Game does not exist')
-        return {}
+        return Response('No game with ID %d.' % game_id, status=400)
     if game_query.filter(User.id == current_user.id).count() == 0:
         # The user is not part of this game.
-        # TODO: return HTTP status code.
-        print('User is not authorized')
-        return {}
+        return Response('User is not authorized.', status=401)
     word_lookup = db.session.query(Game).join(Game.dictionary).join(
         Dictionary.entries).filter(
         func.lower(Entry.word) == func.lower(word)).options(
@@ -145,40 +138,34 @@ def verify_word(game_id, word):
 @bp.route('/game/<int:game_id>/play', methods=['GET', 'POST'])
 @login_required
 def play(game_id):
-    form = TemporaryPlayForm()
-    new_tiles = []
-    game_completed = False
-    if form.validate_on_submit():
-        json_str = form.played_tiles_json.data
-        data = json.loads(json_str)
-    # data = request.json
-        is_valid_data = validate_play_data(data)
-        if not is_valid_data:
-            return 'Invalid data.'
-        mutate_data(data)
-        is_plausible_data = validate_plausible_data(data)
-        is_current_user_turn = validate_user_turn(current_user, game_id)
-        if not is_current_user_turn:
-            return 'It is not your turn.'
-        valid_play, info = validate_play(game_id, data)
-        if not valid_play:
-            return info
-        primary_word = info[0]
-        secondary_words = info[1:]
-        score = score_play(game_id, data)
+    """API to play a turn of the game."""
+    data = request.get_json()
+    errors = []
+    is_valid_data = validate_play_data(data, errors)
+    if not is_valid_data:
+        return Response('Invalid data: %s.' % str(errors), status=400)
+    is_plausible_data = validate_plausible_data(data, errors)
+    if not is_plausible_data:
+        return Response('Invalid data: %s.' % str(errors), status=400)
+    is_current_user_turn = validate_user_turn(current_user, game_id)
+    if not is_current_user_turn:
+        return Response('It is not your turn', status=403)
+    valid, primary_word, secondary_words = validate_play(game_id, data, errors)
+    if not valid:
+        return Response('Invalid data: %s.' % str(errors), status=400)
+    score = score_play(game_id, data)
 
-        place_tiles(game_id, data)
-        add_turn_score_and_move(game_id, score,
-                                primary_word, secondary_words, data)
-        game_continuing = draw_tiles(game_id, data)
-        if game_continuing:
-            advance_turn(game_id)
-        else:
-            tally_remaining_tiles(game_id, data)
-            
-        db.session.commit()
-        return 'Turn played successfully.'
-    return render_template('game/play_turn.html', title='Play turn', form=form)
+    place_tiles(game_id, data)
+    add_turn_score_and_move(game_id, score,
+                            primary_word, secondary_words, data)
+    game_continuing = draw_tiles(game_id, data)
+    if game_continuing:
+        advance_turn(game_id)
+    else:
+        tally_remaining_tiles(game_id)
+
+    db.session.commit()
+    return Response('Turn played successfully.', status=200)
 
 
 @bp.route('/new-game', methods=['GET', 'POST'])
