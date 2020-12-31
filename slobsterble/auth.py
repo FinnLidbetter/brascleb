@@ -12,7 +12,7 @@ from flask_login import current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash
 
 from slobsterble import db
-from slobsterble.models import Player, User
+from slobsterble.models import Dictionary, Player, User
 from slobsterble.forms import LoginForm
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -64,7 +64,11 @@ def register():
     new_user = User(username=data['username'],
                     password_hash=generate_password_hash(data['password']))
     db.session.add(new_user)
-    new_player = Player(user=new_user, display_name=data['display_name'])
+    default_dictionary = db.session.query(Dictionary).filter_by(id=2).first()
+    if default_dictionary is None:
+        return Response('Internal server error.', status=400)
+    new_player = Player(user=new_user, display_name=data['display_name'],
+                        dictionary=default_dictionary)
     db.session.add(new_player)
     db.session.commit()
     return Response('Success!', status=200)

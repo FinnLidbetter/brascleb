@@ -8,8 +8,16 @@ from sqlalchemy.orm import backref, relation, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from slobsterble import db, login_manager
-from slobsterble.constants import FRIEND_KEY_LENGTH, FRIEND_KEY_CHARACTERS
-from slobsterble.models.mixins import MetadataMixin, ModelMixin, ModelSerializer
+from slobsterble.constants import (
+    DISPLAY_NAME_LENGTH_MAX,
+    FRIEND_KEY_CHARACTERS,
+    FRIEND_KEY_LENGTH,
+)
+from slobsterble.models.mixins import (
+    MetadataMixin,
+    ModelMixin,
+    ModelSerializer,
+)
 
 
 user_roles = db.Table(
@@ -88,7 +96,7 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
                    autoincrement=True,
                    doc='Integer ID for the model instance.')
 
-    display_name = db.Column(db.String(15), nullable=False)
+    display_name = db.Column(db.String(DISPLAY_NAME_LENGTH_MAX), nullable=False)
     wins = db.Column(db.Integer, nullable=False, default=0)
     ties = db.Column(db.Integer, nullable=False, default=0)
     losses = db.Column(db.Integer, nullable=False, default=0)
