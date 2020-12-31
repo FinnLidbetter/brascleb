@@ -20,6 +20,9 @@ class Tile(db.Model, ModelMixin, ModelSerializer):
                       nullable=False,
                       doc='The number of points scored by playing this tile.')
 
+    def __str__(self):
+        return self.__repr__()
+
     def __repr__(self):
         if self.is_blank:
             return '(%s)' % self.letter if self.letter else ''
@@ -33,6 +36,9 @@ class TileCount(db.Model, ModelMixin, ModelSerializer):
                       doc='The number of copies of the tile.')
     tile_id = db.Column(db.Integer, db.ForeignKey('tile.id'), nullable=False)
     tile = relationship('Tile', doc='The tile being copied.')
+
+    def __str__(self):
+        return self.__repr__()
 
     def __repr__(self):
         return '%s x %d' % (self.tile.__repr__(), self.count)

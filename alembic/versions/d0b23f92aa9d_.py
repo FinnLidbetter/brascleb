@@ -1,9 +1,8 @@
-"""
-Schema migration to create the tables.
+"""empty message
 
-Revision ID: c2a7026b0899
-Revises:
-Create Date: 2020-06-13 21:27:13.426013
+Revision ID: d0b23f92aa9d
+Revises: 
+Create Date: 2020-12-30 22:16:41.289639
 
 """
 from alembic import op
@@ -11,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c2a7026b0899'
+revision = 'd0b23f92aa9d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -57,6 +56,13 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_entry_word'), 'entry', ['word'], unique=True)
+    op.create_table('friends',
+    sa.Column('my_player_id', sa.Integer(), nullable=False),
+    sa.Column('friend_player_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['friend_player_id'], ['player.id'], ),
+    sa.ForeignKeyConstraint(['my_player_id'], ['player.id'], ),
+    sa.PrimaryKeyConstraint('my_player_id', 'friend_player_id')
+    )
     op.create_table('game',
     sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
@@ -119,6 +125,9 @@ def upgrade():
     sa.Column('highest_individual_score', sa.Integer(), nullable=False),
     sa.Column('highest_combined_score', sa.Integer(), nullable=False),
     sa.Column('best_word_score', sa.Integer(), nullable=False),
+    sa.Column('friend_key', sa.String(length=15), nullable=True),
+    sa.Column('dictionary_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['dictionary_id'], ['dictionary.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -188,6 +197,7 @@ def downgrade():
     op.drop_table('move')
     op.drop_table('game_player')
     op.drop_table('game')
+    op.drop_table('friends')
     op.drop_index(op.f('ix_entry_word'), table_name='entry')
     op.drop_table('entry')
     op.drop_table('entries')

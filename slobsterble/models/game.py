@@ -4,6 +4,7 @@ from sqlalchemy import func, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
+from slobsterble.constants import WORD_LENGTH_MAX
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 
@@ -36,8 +37,6 @@ bag_tiles = db.Table('bag_tiles',
                                db.Integer,
                                db.ForeignKey('tile_count.id'),
                                primary_key=True))
-
-WORD_LENGTH_MAX = 21
 
 
 class GamePlayer(db.Model, ModelMixin, ModelSerializer):

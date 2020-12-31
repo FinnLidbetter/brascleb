@@ -6,10 +6,14 @@ Revises: 3ea1bfba1ae7
 Create Date: 2020-06-14 18:40:13.666551
 
 """
+import os
+import sys
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import orm
 
+sys.path.append(os.getcwd())
 from slobsterble.constants import DISTRIBUTION, TILE_VALUES
 from slobsterble.models import Tile, TileCount
 
@@ -25,7 +29,7 @@ def upgrade():
     session = orm.Session(bind=bind)
     for letter, value in TILE_VALUES.items():
         is_blank = letter is None
-        tile = Tile(letter=None, is_blank=is_blank, value=value)
+        tile = Tile(letter=letter, is_blank=is_blank, value=value)
         if session.query(Tile).filter_by(
                 letter=tile.letter, is_blank=tile.is_blank,
                 value=tile.value).first() is None:

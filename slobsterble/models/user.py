@@ -3,6 +3,7 @@
 import random
 
 from flask_login import UserMixin
+from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.orm import backref, relation, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -31,7 +32,8 @@ friends = db.Table(
     db.Column('friend_player_id',
               db.Integer,
               db.ForeignKey('player.id'),
-              primary_key=True))
+              primary_key=True),
+    PrimaryKeyConstraint('my_player_id', 'friend_player_id'))
 
 
 # Allow flask_login to load users.
@@ -76,7 +78,7 @@ def random_friend_key():
 class Player(db.Model, MetadataMixin, ModelSerializer):
     """Non-auth, non-game-specific information about users."""
     __tablename__ = "player"
-    serialize_exclude_fields = ['game_players', 'friends']
+    serialize_exclude_fields = ['game_players', 'friends', 'dictionary']
 
     # For some reason, defining the self-referential friends
     # column in this implementation requires having the ID field
@@ -104,6 +106,10 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
         backref=backref('friend_of'),
         lazy='subquery',
         doc='The set of players that a player can challenge to a game.')
+    dictionary_id = db.Column(
+        db.Integer, db.ForeignKey('dictionary.id'), nullable=True,
+        doc='The player\'s preferred dictionary.')
+    dictionary = relationship('Dictionary')
 
     def __repr__(self):
         return self.display_name
