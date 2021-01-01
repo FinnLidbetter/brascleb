@@ -30,6 +30,7 @@ from slobsterble.turn_controller import (
     draw_tiles,
     place_tiles,
     score_play,
+    set_completed_time,
     tally_remaining_tiles,
     validate_plausible_data,
     validate_play,
@@ -178,6 +179,7 @@ def play(game_id):
         advance_turn(game_id)
     else:
         tally_remaining_tiles(game_id)
+        set_completed_time(game_id)
 
     db.session.commit()
     return Response('Turn played successfully.', status=200)

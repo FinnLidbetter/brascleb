@@ -1,5 +1,6 @@
 """Controller for updating a game state."""
 
+import datetime
 import random
 from collections import defaultdict
 
@@ -669,6 +670,11 @@ def tally_remaining_tiles(game_id):
                 game_player.player.ties += 1
         else:
             game_player.player.losses += 1
+
+
+def set_completed_time(game_id):
+    game = db.session.query(Game).filter(Game.id == game_id).first()
+    game.completed = datetime.datetime.now()
 
 
 def advance_turn(game_id):
