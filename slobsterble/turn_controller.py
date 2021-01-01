@@ -645,7 +645,7 @@ def tally_remaining_tiles(game_id):
     game = db.session.query(Game).filter(Game.id == game_id).options(
         subqueryload(Game.game_players).subqueryload(
         GamePlayer.rack).joinedload(TileCount.tile)).options(
-        Game.game_player_to_play).options(joinedload(GamePlayer.player)).first()
+        joinedload(Game.game_player_to_play).joinedload(GamePlayer.player)).first()
     remaining_sum = 0
     for game_player in game.game_players:
         if game_player == game.game_player_to_play:

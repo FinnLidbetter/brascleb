@@ -41,7 +41,7 @@ def initialize_racks(game_id):
             bag_tiles_with_repeats.append(tile_count.tile_id)
             bag_tile_counts[tile_count.tile_id] += 1
     num_tiles_to_draw = TILES_ON_RACK_MAX * len(game.game_players)
-    tile_ids = random.choices(bag_tiles_with_repeats, k=num_tiles_to_draw)
+    tile_ids = random.sample(bag_tiles_with_repeats, k=num_tiles_to_draw)
     for player_index, game_player in enumerate(game.game_players):
         rack = defaultdict(int)
         for rack_index in range(TILES_ON_RACK_MAX):

@@ -1,5 +1,4 @@
 """API views."""
-import json
 import random
 
 from flask import Blueprint, Response, jsonify, render_template, request
@@ -112,10 +111,13 @@ def get_game(game_id):
         Player.user).filter(Player.user_id == current_user.id).join(
         GamePlayer.rack).join(TileCount.tile).options(
         subqueryload(GamePlayer.rack).joinedload(TileCount.tile)).first()
-    serialized_user_rack = user_rack.serialize(
-        override_mask={GamePlayer: ['rack'],
-                       TileCount: ['tile', 'count'],
-                       Tile: ['letter', 'is_blank', 'value']})
+    if user_rack is None:
+        serialized_user_rack = {'rack': []}
+    else:
+        serialized_user_rack = user_rack.serialize(
+            override_mask={GamePlayer: ['rack'],
+                           TileCount: ['tile', 'count'],
+                           Tile: ['letter', 'is_blank', 'value']})
     serialized_game_state['rack'] = serialized_user_rack['rack']
     return jsonify(serialized_game_state)
 
@@ -355,13 +357,13 @@ def new_game():
             return Response(
                 'Internal server error. '
                 'Unable to fetch all players.', status=400)
+        game = Game(dictionary=current_player.dictionary)
         players = opponent_players + [current_player]
         game_players = [
             GamePlayer(player=player, game=game) for player in players]
         random.shuffle(game_players)
         for index, game_player in enumerate(game_players):
             game_player.turn_order = index
-        game = Game(dictionary=current_player.dictionary)
         game.game_player_to_play = game_players[0]
         objects = [game] + game_players
         db.session.add_all(objects)
