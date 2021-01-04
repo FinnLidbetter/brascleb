@@ -10,23 +10,21 @@ from sqlalchemy.orm import aliased, joinedload, subqueryload
 from slobsterble import db
 from slobsterble.constants import (
     BINGO_BONUS,
-    CENTER_COLUMN,
-    CENTER_ROW,
-    GAME_COLUMNS,
-    GAME_ROWS,
-    LETTER_MODIFIERS,
+    GAME_COLUMNS_MAX,
+    GAME_ROWS_MAX,
     PLAYED_TILE_REQUIRED_FIELDS,
     TILE_VALUE_MAX,
     TILES_ON_RACK_MAX,
-    WORD_MODIFIERS,
 )
 from slobsterble.models import (
+    BoardLayout,
     Dictionary,
     Game,
     GamePlayer,
     Move,
     PlayedTile,
     Player,
+    PositionedModifier,
     Tile,
     TileCount,
     User)
@@ -77,13 +75,19 @@ def _validate_played_tile(played_tile, index, errors):
     if len(played_tile) > len(PLAYED_TILE_REQUIRED_FIELDS):
         errors.append('Tile %d has too many fields' % index)
         return False
-    if not _validate_int(played_tile['row'], 0, GAME_ROWS - 1, allow_none=True):
+    if not _validate_int(played_tile['row'],
+                         0, GAME_ROWS_MAX - 1,
+                         allow_none=True):
         errors.append('Tile %d has a bad row value.' % index)
         return False
-    if not _validate_int(played_tile['column'], 0, GAME_COLUMNS - 1, allow_none=True):
+    if not _validate_int(played_tile['column'],
+                         0, GAME_COLUMNS_MAX - 1,
+                         allow_none=True):
         errors.append('Tile %d has a bad column value.' % index)
         return False
-    if not _validate_int(played_tile['value'], 0, TILE_VALUE_MAX, allow_none=False):
+    if not _validate_int(played_tile['value'],
+                         0, TILE_VALUE_MAX,
+                         allow_none=False):
         errors.append("Tile %d has a bad 'value' value." % index)
         return False
     if not _validate_alpha_character(played_tile['letter'], allow_none=True):
@@ -171,6 +175,9 @@ def validate_user_turn(current_user, game_id):
     if game_query is None:
         # The queried game does not exist.
         return False
+    if game_query.completed is not None:
+        # The game is completed.
+        return False
     return game_query.game_player_to_play.player.user.id == current_user.id
 
 
@@ -210,7 +217,9 @@ def _validate_player_has_tiles(game_query, data):
 
 def _get_game_grid_letters(game_query):
     """Get the current board state as a 2-D array."""
-    grid = [[None for _ in range(GAME_COLUMNS)] for _ in range(GAME_ROWS)]
+    rows = game_query.board_layout.rows
+    columns = game_query.board_layout.columns
+    grid = [[None for _ in range(columns)] for _ in range(rows)]
     for played_tile in game_query.board_state:
         grid[played_tile.row][played_tile.column] = played_tile.tile.letter
     return grid
@@ -218,10 +227,35 @@ def _get_game_grid_letters(game_query):
 
 def _get_game_grid_values(game_query):
     """Get the current board state as a 2-D array."""
-    grid = [[None for _ in range(GAME_COLUMNS)] for _ in range(GAME_ROWS)]
+    rows = game_query.board_layout.rows
+    columns = game_query.board_layout.columns
+    grid = [[None for _ in range(columns)] for _ in range(rows)]
     for played_tile in game_query.board_state:
         grid[played_tile.row][played_tile.column] = played_tile.tile.value
     return grid
+
+
+def _get_center(game_query):
+    """Get the center row and column."""
+    rows = game_query.board_layout.rows
+    columns = game_query.board_layout.columns
+    return rows // 2, columns // 2
+
+
+def _get_game_grid_modifiers(game_query):
+    """Get the word and letter modifiers for the game."""
+    rows = game_query.board_layout.rows
+    columns = game_query.board_layout.columns
+    word_multipliers = [[1 for _ in range(columns)] for _ in range(rows)]
+    letter_multipliers = [[1 for _ in range(columns)] for _ in range(columns)]
+    for positioned_modifier in game_query.board_layout.modifiers:
+        row = positioned_modifier.row
+        column = positioned_modifier.column
+        word_multiplier = positioned_modifier.modifier.word_multiplier
+        letter_multiplier = positioned_modifier.modifier.letter_multiplier
+        word_multipliers[row][column] = word_multiplier
+        letter_multipliers[row][column] = letter_multiplier
+    return word_multipliers, letter_multipliers
 
 
 def _is_exchange_or_pass(data):
@@ -232,6 +266,10 @@ def _is_exchange_or_pass(data):
 def _validate_cells_available(grid, data):
     """Validate that the cells that the tiles are played in are empty."""
     for played_tile in data['played_tiles']:
+        if played_tile['row'] >= len(grid):
+            return False
+        if played_tile['column'] >= len(grid[played_tile['row']]):
+            return False
         if grid[played_tile['row']][played_tile['column']] is not None:
             return False
     return True
@@ -266,11 +304,11 @@ def _validate_continuous(grid, data):
     return True
 
 
-def _is_first_turn(data):
+def _is_first_turn(data, center_row, center_column):
     """Return True iff the played tiles go through the center cell."""
     for played_tile in data['played_tiles']:
-        if played_tile['row'] == CENTER_ROW and \
-                played_tile['column'] == CENTER_COLUMN:
+        if played_tile['row'] == center_row and \
+                played_tile['column'] == center_column:
             return True
     return False
 
@@ -285,8 +323,8 @@ def _validate_connects(grid, data):
         for d_row, d_column in zip(row_offsets, column_offsets):
             adjacent_row = row + d_row
             adjacent_column = column + d_column
-            if 0 <= adjacent_row < GAME_ROWS and \
-                    0 <= adjacent_column < GAME_COLUMNS:
+            if 0 <= adjacent_row < len(grid) and \
+                    0 <= adjacent_column < len(grid[adjacent_row]):
                 if grid[adjacent_row][adjacent_column] is not None:
                     return True
     return False
@@ -302,7 +340,7 @@ def _get_word_row_endpoints(grid, played_tile_map, row, column):
         else:
             break
     row_max = row
-    while row_max < GAME_ROWS - 1:
+    while row_max < len(grid) - 1:
         if grid[row_max + 1][column] is not None or \
                 played_tile_map.get(row_max + 1, {}).get(column) is not None:
             row_max += 1
@@ -321,7 +359,7 @@ def _get_word_column_endpoints(grid, played_tile_map, row, column):
         else:
             break
     column_max = column
-    while column_max < GAME_COLUMNS - 1:
+    while column_max < len(grid[row]) - 1:
         if grid[row][column_max + 1] is not None or \
                 played_tile_map.get(row, {}).get(column_max + 1) is not None:
             column_max += 1
@@ -345,6 +383,8 @@ def _read_word(grid, played_tile_map, row_min, row_max, column_min, column_max):
 
 def _get_words(grid, data):
     """Get a list of the new words created and the primary word played."""
+    center_row = len(grid) // 2
+    center_column = len(grid[0]) // 2
     if len(data['played_tiles']) == 0 or data['played_tiles'][0]['is_exchange']:
         # Either the turn was passed or tiles were exchanged.
         return [], None
@@ -352,7 +392,7 @@ def _get_words(grid, data):
         # Special case where a single letter word is played on the first turn.
         row = data['played_tiles'][0]['row']
         column = data['played_tiles'][0]['column']
-        if row == CENTER_ROW and column == CENTER_COLUMN:
+        if row == center_row and column == center_column:
             letter = data['played_tiles'][0]['letter']
             return [letter], letter
     row_set = set()
@@ -421,7 +461,8 @@ def validate_play(game_id, data, errors):
         joinedload(Game.game_player_to_play).subqueryload(
         GamePlayer.rack).joinedload(TileCount.tile)).options(
         subqueryload(Game.board_state).joinedload(PlayedTile.tile)).options(
-        joinedload(Game.dictionary).subqueryload(Dictionary.entries))
+        joinedload(Game.dictionary).subqueryload(Dictionary.entries)).options(
+        joinedload(Game.board_layout))
     game_query_result = game_query.first()
     if not _validate_player_has_tiles(game_query_result, data):
         errors.append('Player attempted to use a tile that they do not have.')
@@ -435,7 +476,8 @@ def validate_play(game_id, data, errors):
     if not _validate_continuous(game_grid, data):
         errors.append('Your tiles were not played continuously.')
         return False, None, []
-    if not _is_first_turn(data) and not _validate_connects(game_grid, data):
+    center_row, center_column = _get_center(game_query_result)
+    if not _is_first_turn(data, center_row, center_column) and not _validate_connects(game_grid, data):
         errors.append('Your tiles do not join onto the played words correctly.')
         return False, None, []
     words_played, primary_word = _get_words(game_grid, data)
@@ -459,9 +501,14 @@ def score_play(game_id, data):
         return 0
     game_query = db.session.query(Game).filter(Game.id == game_id).outerjoin(
         Game.board_state).outerjoin(PlayedTile.tile).options(
-        subqueryload(Game.board_state).joinedload(PlayedTile.tile))
+        subqueryload(Game.board_state).joinedload(PlayedTile.tile)).options(
+        joinedload(Game.board_layout).subqueryload(
+            BoardLayout.modifiers).joinedload(PositionedModifier.modifier))
     game_query_result = game_query.first()
     game_grid = _get_game_grid_values(game_query_result)
+    word_modifiers, letter_modifiers = _get_game_grid_modifiers(
+        game_query_result)
+    center_row, center_column = _get_center(game_query_result)
     row_set = set()
     column_set = set()
     played_values_map = defaultdict(dict)
@@ -472,13 +519,13 @@ def score_play(game_id, data):
         column_set.add(column)
         played_values_map[row][column] = played_tile['value']
     if (len(row_set) == 1 and len(column_set) == 1 and
-            played_values_map.get(CENTER_ROW, {}).get(CENTER_COLUMN)
+            played_values_map.get(center_row, {}).get(center_column)
             is not None):
         # Handle the special case where a single letter is played
         # on the first turn.
-        return (LETTER_MODIFIERS[CENTER_ROW][CENTER_COLUMN]
-                * WORD_MODIFIERS[CENTER_ROW][CENTER_COLUMN]
-                * played_values_map.get(CENTER_ROW, {}).get(CENTER_COLUMN))
+        return (letter_modifiers[center_row][center_column]
+                * word_modifiers[center_row][center_column]
+                * played_values_map.get(center_row, {}).get(center_column))
     score_sum = 0
     for row in row_set:
         column = column_set.pop()
@@ -492,8 +539,8 @@ def score_play(game_id, data):
                 played_tile_value = played_values_map.get(row, {}).get(column)
                 if played_tile_value is not None:
                     word_score += (played_tile_value
-                                   * LETTER_MODIFIERS[row][column])
-                    word_multiplier *= WORD_MODIFIERS[row][column]
+                                   * letter_modifiers[row][column])
+                    word_multiplier *= word_modifiers[row][column]
                 else:
                     word_score += game_grid[row][column]
             word_score *= word_multiplier
@@ -510,8 +557,8 @@ def score_play(game_id, data):
                 played_tile_value = played_values_map.get(row, {}).get(column)
                 if played_tile_value is not None:
                     word_score += (played_tile_value
-                                   * LETTER_MODIFIERS[row][column])
-                    word_multiplier *= WORD_MODIFIERS[row][column]
+                                   * letter_modifiers[row][column])
+                    word_multiplier *= word_modifiers[row][column]
                 else:
                     word_score += game_grid[row][column]
             word_score *= word_multiplier

@@ -109,6 +109,11 @@ class Game(db.Model, ModelMixin, ModelSerializer):
                               nullable=False)
     dictionary = relationship('Dictionary',
                               doc='The dictionary being used by this game.')
+    board_layout_id = db.Column(db.Integer,
+                                db.ForeignKey('board_layout.id'))
+    board_layout = relationship('BoardLayout',
+                                doc='The board layout being used by this game.')
+
     started = db.Column(db.DateTime,
                         default=func.now(),
                         nullable=False,
@@ -122,7 +127,7 @@ class Game(db.Model, ModelMixin, ModelSerializer):
                             doc='The current turn number of the game.')
     game_players = relationship(
         GamePlayer,
-        primaryjoin=id==GamePlayer.game_id,
+        primaryjoin=id == GamePlayer.game_id,
         foreign_keys=GamePlayer.game_id,
         backref="game")
 
@@ -130,7 +135,7 @@ class Game(db.Model, ModelMixin, ModelSerializer):
 
     game_player_to_play = relationship(
         GamePlayer,
-        primaryjoin=game_player_to_play_id==GamePlayer.id,
+        primaryjoin=game_player_to_play_id == GamePlayer.id,
         foreign_keys=game_player_to_play_id,
         post_update=True,
         doc='The game player whose turn it is to play.')

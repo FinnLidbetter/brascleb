@@ -5,6 +5,16 @@ from sqlalchemy.orm import relationship
 from slobsterble import db
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
+tile_distribution = db.Table('tile_distribution',
+                             db.Column('distribution_id',
+                                       db.Integer,
+                                       db.ForeignKey('distribution.id'),
+                                       primary_key=true),
+                             db.Column('tile_count_id',
+                                       db.Integer,
+                                       db.ForeignKey('tile_count.id'),
+                                       primary_key=True))
+
 
 class Tile(db.Model, ModelMixin, ModelSerializer):
     """A letter and its value, possibly blank."""
@@ -58,3 +68,15 @@ class PlayedTile(db.Model, ModelMixin, ModelSerializer):
 
     def __repr__(self):
         return '%s at (%d, %d)' % (str(self.tile), self.row, self.column)
+
+
+class Distribution(db.Model, ModelMixin, ModelSerializer):
+    """A distribution of tiles for a game."""
+    name = db.Column(db.String(256), nullable=False,
+                     doc='A descriptive name for an initial tile distribution.')
+
+    tile_distribution = db.relationship(
+        TileCount,
+        secondary=tile_distribution,
+        lazy='subquery',
+        doc='The multi-set of tiles in the distribution.')

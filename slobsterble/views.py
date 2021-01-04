@@ -39,6 +39,7 @@ from slobsterble.turn_controller import (
 )
 from slobsterble.models import (
     Dictionary,
+    Distribution,
     Entry,
     Game,
     GamePlayer,
@@ -104,7 +105,7 @@ def get_game(game_id):
         override_mask={Game: ['board_state', 'game_players',
                               'whose_turn_name', 'num_tiles_remaining'],
                        GamePlayer: ['score', 'player'],
-                       Player: ['display_name'],
+                       Player: ['id', 'display_name'],
                        PlayedTile: ['tile', 'row', 'column'],
                        Tile: ['letter', 'is_blank', 'value']})
     user_rack = db.session.query(GamePlayer).filter(
@@ -349,7 +350,11 @@ def new_game():
             opponent_ids.append(friend_data['player_id'])
         current_player = db.session.query(Player).filter_by(
             user_id=current_user.id).options(
-            joinedload(Player.dictionary)).first()
+            joinedload(Player.dictionary),
+            joinedload(Player.board_layout),
+            joinedload(Player.distribution).subqueryload(
+                Distribution.tile_distribution).joinedload(
+                TileCount.tile)).first()
         if current_player is None:
             return Response(
                 'Internal server error. Player is unknown.', status=400)
@@ -359,7 +364,8 @@ def new_game():
             return Response(
                 'Internal server error. '
                 'Unable to fetch all players.', status=400)
-        game = Game(dictionary=current_player.dictionary)
+        game = Game(dictionary=current_player.dictionary,
+                    board_layout=current_player.board_layout)
         players = opponent_players + [current_player]
         game_players = [
             GamePlayer(player=player, game=game) for player in players]
@@ -370,7 +376,7 @@ def new_game():
         objects = [game] + game_players
         db.session.add_all(objects)
         db.session.commit()
-        initialize_bag(game.id)
+        initialize_bag(game.id, current_player.distribution)
         initialize_racks(game.id)
         return Response('New game created!', status=200)
     return Response('Unknown request method.', status=400)

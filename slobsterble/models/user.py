@@ -105,7 +105,8 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
     highest_individual_score = db.Column(db.Integer, nullable=False, default=0)
     highest_combined_score = db.Column(db.Integer, nullable=False, default=0)
     best_word_score = db.Column(db.Integer, nullable=False, default=0)
-    friend_key = db.Column(db.String(FRIEND_KEY_LENGTH), default=random_friend_key)
+    friend_key = db.Column(db.String(FRIEND_KEY_LENGTH), nullable=False,
+                           default=random_friend_key)
     friends = relation(
         'Player',
         secondary=friends,
@@ -115,9 +116,22 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
         lazy='subquery',
         doc='The set of players that a player can challenge to a game.')
     dictionary_id = db.Column(
-        db.Integer, db.ForeignKey('dictionary.id'), nullable=True,
+        db.Integer, db.ForeignKey('dictionary.id'), nullable=False,
         doc='The player\'s preferred dictionary.')
     dictionary = relationship('Dictionary')
 
-    def __repr__(self):
+    board_layout_id = db.Column(
+        db.Integer, db.ForeignKey('board_layout.id'), nullable=False,
+        doc='The player\'s preferred board layout.')
+    board_layout = relationship('BoardLayout')
+
+    distribution_id = db.Column(
+        db.Integer, db.ForeignKey('distribution.id'), nullable=False,
+        doc='The player\'s preferred tile distribution.')
+    distribution = relationship('Distribution')
+
+    def __str__(self):
         return self.display_name
+
+    def __repr__(self):
+        return '%s (%d)' % (self.__str__(), self.id)

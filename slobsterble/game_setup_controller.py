@@ -9,19 +9,12 @@ from slobsterble.constants import DISTRIBUTION, TILE_VALUES, TILES_ON_RACK_MAX
 from slobsterble.models import Game, GamePlayer, Tile, TileCount
 
 
-def initialize_bag(game_id):
+def initialize_bag(game_id, tile_distribution):
     """Initialize the game's bag with the initial tile distribution."""
-    tile_counts = db.session.query(TileCount).options(
-        joinedload(TileCount.tile)).all()
-    tile_count_dict = {(tile_count.tile.letter, tile_count.tile.value,
-                        tile_count.count): tile_count
-                       for tile_count in tile_counts}
     game = db.session.query(Game).filter(Game.id == game_id).options(
         subqueryload(Game.bag_tiles)).first()
-    for letter in DISTRIBUTION.keys():
-        value = TILE_VALUES[letter]
-        count = DISTRIBUTION[letter]
-        game.bag_tiles.append(tile_count_dict[(letter, value, count)])
+    for tile_count in tile_distribution:
+        game.bag_tiles.append(tile_count)
     db.session.commit()
 
 
