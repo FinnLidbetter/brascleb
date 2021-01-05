@@ -1,8 +1,5 @@
 """
-Data migration to create SOWPODS and ENABLE dictionaries.
-Dictionaries were retrieved from
-    https://www.wordgamedictionary.com/word-lists/
-2020-12-30
+Data migration to create YAWL and ENABLE dictionaries.
 
 Revision ID: 3ea1bfba1ae7
 Revises: d0b23f92aa9d
@@ -32,7 +29,7 @@ def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
     dictionary_names = {'ENABLE (North American)': 'enable.txt',
-                        'SOWPODS (International)': 'sowpods.txt'}
+                        'YAWL (Extended)': 'yawl.txt'}
     dict_words = defaultdict(list)
     entries = {}
     for dictionary_name, path in dictionary_names.items():
