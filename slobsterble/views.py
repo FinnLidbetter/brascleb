@@ -38,14 +38,17 @@ from slobsterble.turn_controller import (
     validate_user_turn,
 )
 from slobsterble.models import (
+    BoardLayout,
     Dictionary,
     Distribution,
     Entry,
     Game,
     GamePlayer,
+    Modifier,
     Move,
     PlayedTile,
     Player,
+    PositionedModifier,
     Role,
     Tile,
     TileCount,
@@ -94,7 +97,9 @@ def get_game(game_id):
         Game.game_players).join(GamePlayer.player).join(Player.user).outerjoin(
         Game.board_state).options(subqueryload(Game.board_state).joinedload(
         PlayedTile.tile)).options(subqueryload(Game.game_players).joinedload(
-        GamePlayer.player).joinedload(Player.user))
+        GamePlayer.player).joinedload(Player.user)).options(
+        joinedload(Game.board_layout).subqueryload(
+            BoardLayout.modifiers).joinedload(PositionedModifier.modifier))
     if game_query.count() == 0:
         # The game does not exist.
         return Response('Game with this ID not found.', status=404)
@@ -103,11 +108,15 @@ def get_game(game_id):
         return Response('User is not authorized to access this game.', status=401)
     serialized_game_state = game_query.first().serialize(
         override_mask={Game: ['board_state', 'game_players',
-                              'whose_turn_name', 'num_tiles_remaining'],
+                              'whose_turn_name', 'num_tiles_remaining',
+                              'board_layout'],
                        GamePlayer: ['score', 'player'],
                        Player: ['id', 'display_name'],
                        PlayedTile: ['tile', 'row', 'column'],
-                       Tile: ['letter', 'is_blank', 'value']})
+                       Tile: ['letter', 'is_blank', 'value'],
+                       BoardLayout: ['rows', 'columns', 'modifiers'],
+                       PositionedModifier: ['row', 'column', 'modifier'],
+                       Modifier: ['letter_multiplier', 'word_multiplier']})
     user_rack = db.session.query(GamePlayer).filter(
         GamePlayer.game_id == game_id).join(GamePlayer.player).join(
         Player.user).filter(Player.user_id == current_user.id).join(
@@ -121,6 +130,7 @@ def get_game(game_id):
                            TileCount: ['tile', 'count'],
                            Tile: ['letter', 'is_blank', 'value']})
     serialized_game_state['rack'] = serialized_user_rack['rack']
+    print(serialized_game_state)
     return jsonify(serialized_game_state)
 
 
@@ -157,6 +167,7 @@ def verify_word(game_id, word):
 def play(game_id):
     """API to play a turn of the game."""
     data = request.get_json()
+    print(data)
     errors = []
     is_valid_data = validate_play_data(data, errors)
     if not is_valid_data:

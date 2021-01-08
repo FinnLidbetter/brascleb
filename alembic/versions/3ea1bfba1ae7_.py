@@ -20,7 +20,7 @@ from slobsterble.models import Dictionary, Entry
 
 # revision identifiers, used by Alembic.
 revision = '3ea1bfba1ae7'
-down_revision = 'd0b23f92aa9d'
+down_revision = '52569b85afa4'
 branch_labels = None
 depends_on = None
 

@@ -44,7 +44,7 @@ class GamePlayer(db.Model, ModelMixin, ModelSerializer):
     __tablename__ = 'game_player'
 
     __table_args__ = (
-        UniqueConstraint("id", "game_id"),
+        UniqueConstraint('player_id', 'game_id'),
     )
 
     serialize_exclude_fields = ['game', 'game_id', 'player_id']
@@ -80,9 +80,9 @@ class Game(db.Model, ModelMixin, ModelSerializer):
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["id", "game_player_to_play_id"],
-            ["game_player.game_id", "game_player.id"],
-            name="fk_game_player_to_play"
+            ['id', 'game_player_to_play_id'],
+            ['game_player.game_id', 'game_player.id'],
+            name='fk_game_player_to_play'
         ),
     )
 
@@ -110,7 +110,8 @@ class Game(db.Model, ModelMixin, ModelSerializer):
     dictionary = relationship('Dictionary',
                               doc='The dictionary being used by this game.')
     board_layout_id = db.Column(db.Integer,
-                                db.ForeignKey('board_layout.id'))
+                                db.ForeignKey('board_layout.id'),
+                                nullable=False)
     board_layout = relationship('BoardLayout',
                                 doc='The board layout being used by this game.')
 

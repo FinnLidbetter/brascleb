@@ -1,5 +1,6 @@
 """Models related to information about tiles."""
 
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from slobsterble import db
@@ -9,7 +10,7 @@ tile_distribution = db.Table('tile_distribution',
                              db.Column('distribution_id',
                                        db.Integer,
                                        db.ForeignKey('distribution.id'),
-                                       primary_key=true),
+                                       primary_key=True),
                              db.Column('tile_count_id',
                                        db.Integer,
                                        db.ForeignKey('tile_count.id'),
@@ -18,6 +19,10 @@ tile_distribution = db.Table('tile_distribution',
 
 class Tile(db.Model, ModelMixin, ModelSerializer):
     """A letter and its value, possibly blank."""
+    __tablename__ = 'tile'
+    __table_args__ = (
+        UniqueConstraint('letter', 'is_blank', 'value'),
+    )
     letter = db.Column(db.String(1, collation='NOCASE'),
                        nullable=True,
                        doc='The letter to display on this tile (possibly '
@@ -41,6 +46,10 @@ class Tile(db.Model, ModelMixin, ModelSerializer):
 
 class TileCount(db.Model, ModelMixin, ModelSerializer):
     """A quantity of a particular tile."""
+    __tablename__ = 'tile_count'
+    __table_args__ = (
+        UniqueConstraint('tile_id', 'count'),
+    )
     count = db.Column(db.Integer,
                       nullable=False,
                       doc='The number of copies of the tile.')
@@ -56,6 +65,10 @@ class TileCount(db.Model, ModelMixin, ModelSerializer):
 
 class PlayedTile(db.Model, ModelMixin, ModelSerializer):
     """The location of a tile played on a board."""
+    __tablename__ = 'played_tile'
+    __table_args__ = (
+        UniqueConstraint('tile_id', 'row', 'column'),
+    )
     tile_id = db.Column(db.Integer, db.ForeignKey('tile.id'), nullable=False)
     tile = relationship('Tile', doc='The tile played.')
     row = db.Column(db.Integer,
@@ -72,7 +85,7 @@ class PlayedTile(db.Model, ModelMixin, ModelSerializer):
 
 class Distribution(db.Model, ModelMixin, ModelSerializer):
     """A distribution of tiles for a game."""
-    name = db.Column(db.String(256), nullable=False,
+    name = db.Column(db.String(256), nullable=False, unique=True,
                      doc='A descriptive name for an initial tile distribution.')
 
     tile_distribution = db.relationship(

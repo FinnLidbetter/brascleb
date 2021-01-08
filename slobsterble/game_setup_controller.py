@@ -5,15 +5,15 @@ import random
 from sqlalchemy.orm import joinedload, subqueryload
 
 from slobsterble import db
-from slobsterble.constants import DISTRIBUTION, TILE_VALUES, TILES_ON_RACK_MAX
-from slobsterble.models import Game, GamePlayer, Tile, TileCount
+from slobsterble.constants import TILES_ON_RACK_MAX
+from slobsterble.models import Game, GamePlayer, TileCount
 
 
 def initialize_bag(game_id, tile_distribution):
     """Initialize the game's bag with the initial tile distribution."""
     game = db.session.query(Game).filter(Game.id == game_id).options(
         subqueryload(Game.bag_tiles)).first()
-    for tile_count in tile_distribution:
+    for tile_count in tile_distribution.tile_distribution:
         game.bag_tiles.append(tile_count)
     db.session.commit()
 

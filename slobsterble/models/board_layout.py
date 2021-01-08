@@ -18,6 +18,10 @@ modifiers = db.Table('modifiers',
 
 class Modifier(db.Model, ModelMixin, ModelSerializer):
     """Multiplicative modifier descriptor for played tiles."""
+    __tablename__ = 'modifier'
+    __table_args__ = (
+        UniqueConstraint('letter_multiplier', 'word_multiplier'),
+    )
     letter_multiplier = db.Column(db.Integer, nullable=False, default=1)
     word_multiplier = db.Column(db.Integer, nullable=False, default=1)
 
@@ -33,9 +37,9 @@ class Modifier(db.Model, ModelMixin, ModelSerializer):
 
 class PositionedModifier(db.Model, ModelMixin, ModelSerializer):
     """Location of a modifier for a layout."""
-    __tablename = 'positioned_modifier'
+    __tablename__ = 'positioned_modifier'
     __table_args__ = (
-        UniqueConstraint('id', 'row', 'column', 'modifier_id'),
+        UniqueConstraint('row', 'column', 'modifier_id'),
     )
 
     row = db.Column(
@@ -60,7 +64,7 @@ class PositionedModifier(db.Model, ModelMixin, ModelSerializer):
 
 class BoardLayout(db.Model, ModelMixin, ModelSerializer):
     """A description for an empty board."""
-    name = db.Column(db.String(256), nullable=False,
+    name = db.Column(db.String(256), nullable=False, unique=True,
                      doc='A descriptive name for the board layout.')
 
     rows = db.Column(
@@ -82,9 +86,13 @@ class BoardLayout(db.Model, ModelMixin, ModelSerializer):
     @validates('rows')
     def validate_rows(self, key, rows):
         """Require that the number of rows is odd."""
-        return int(rows) % 2 == 1
+        if rows % 2 == 0:
+            raise ValueError('The number of rows must be odd.')
+        return rows
 
     @validates('columns')
     def validate_columns(self, key, columns):
         """Require that the number of columns is odd."""
-        return int(columns) % 2 == 1
+        if columns % 2 == 0:
+            raise ValueError('The number of columns must be odd.')
+        return columns

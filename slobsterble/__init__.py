@@ -28,24 +28,32 @@ def create_app():
 
     # Add admin model views.
     from slobsterble.models import (
+        BoardLayout,
         Dictionary,
+        Distribution,
         Entry,
         Game,
         GamePlayer,
+        Modifier,
         Move,
         PlayedTile,
         Player,
+        PositionedModifier,
         Role,
         Tile,
         TileCount,
         User,
     )
     admin.init_app(app)
+    admin.add_view(SlobsterbleModelView(BoardLayout, db.session))
     admin.add_view(SlobsterbleModelView(Dictionary, db.session))
+    admin.add_view(SlobsterbleModelView(Distribution, db.session))
     admin.add_view(SlobsterbleModelView(Entry, db.session))
     admin.add_view(SlobsterbleModelView(Game, db.session))
     admin.add_view(SlobsterbleModelView(GamePlayer, db.session))
+    admin.add_view(SlobsterbleModelView(Modifier, db.session))
     admin.add_view(SlobsterbleModelView(Move, db.session))
+    admin.add_view(SlobsterbleModelView(PositionedModifier, db.session))
     admin.add_view(SlobsterbleModelView(Role, db.session))
     admin.add_view(SlobsterbleModelView(Tile, db.session))
     admin.add_view(SlobsterbleModelView(TileCount, db.session))
