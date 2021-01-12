@@ -110,10 +110,9 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
     friends = relation(
         'Player',
         secondary=friends,
-        primaryjoin=friends.c.my_player_id==id,
-        secondaryjoin=friends.c.friend_player_id==id,
+        primaryjoin=friends.c.my_player_id == id,
+        secondaryjoin=friends.c.friend_player_id == id,
         backref=backref('friend_of'),
-        lazy='subquery',
         doc='The set of players that a player can challenge to a game.')
     dictionary_id = db.Column(
         db.Integer, db.ForeignKey('dictionary.id'), nullable=False,

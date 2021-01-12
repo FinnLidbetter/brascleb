@@ -130,7 +130,6 @@ def get_game(game_id):
                            TileCount: ['tile', 'count'],
                            Tile: ['letter', 'is_blank', 'value']})
     serialized_game_state['rack'] = serialized_user_rack['rack']
-    print(serialized_game_state)
     return jsonify(serialized_game_state)
 
 
@@ -138,7 +137,6 @@ def get_game(game_id):
 #@login_required
 #def move_history(game_id):
 #    """Get the history of turns for a game."""
-
 
 
 @bp.route('/game/<int:game_id>/verify-word/<string:word>', methods=['GET'])
@@ -158,7 +156,8 @@ def verify_word(game_id, word):
         func.lower(Entry.word) == func.lower(word)).options(
         joinedload(Game.dictionary).subqueryload(Dictionary.entries)).first()
     if word_lookup is None:
-        return {}
+        return Response('The word is not in this game\'s dictionary.',
+                        status=404)
     return jsonify(entry=word_lookup.dictionary.entries[0].serialize())
 
 
@@ -167,7 +166,6 @@ def verify_word(game_id, word):
 def play(game_id):
     """API to play a turn of the game."""
     data = request.get_json()
-    print(data)
     errors = []
     is_valid_data = validate_play_data(data, errors)
     if not is_valid_data:

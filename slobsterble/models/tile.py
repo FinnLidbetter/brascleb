@@ -91,5 +91,4 @@ class Distribution(db.Model, ModelMixin, ModelSerializer):
     tile_distribution = db.relationship(
         TileCount,
         secondary=tile_distribution,
-        lazy='subquery',
         doc='The multi-set of tiles in the distribution.')

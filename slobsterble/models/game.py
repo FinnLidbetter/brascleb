@@ -53,12 +53,11 @@ class GamePlayer(db.Model, ModelMixin, ModelSerializer):
                           db.ForeignKey('player.id'),
                           nullable=False)
     player = relationship('Player',
-                          backref=db.backref('game_players', lazy=True),
+                          backref=db.backref('game_players'),
                           doc='The user for this game player.')
     rack = db.relationship(
         'TileCount',
         secondary=rack,
-        lazy='subquery',
         doc='The collection of tiles currently held by this player.')
     score = db.Column(db.Integer,
                       nullable=False,
@@ -97,12 +96,10 @@ class Game(db.Model, ModelMixin, ModelSerializer):
     board_state = db.relationship(
         'PlayedTile',
         secondary=board_state,
-        lazy='subquery',
         doc='The positions of the played tiles.')
     bag_tiles = db.relationship(
         'TileCount',
         secondary=bag_tiles,
-        lazy='subquery',
         doc='The tiles remaining in the bag.')
     dictionary_id = db.Column(db.Integer,
                               db.ForeignKey('dictionary.id'),
@@ -163,7 +160,7 @@ class Move(db.Model, ModelMixin, ModelSerializer):
                                db.ForeignKey('game_player.id'),
                                nullable=False)
     game_player = relationship('GamePlayer',
-                               backref=db.backref('moves', lazy=True),
+                               backref=db.backref('moves'),
                                doc='The player that played this move.')
     primary_word = db.Column(db.String(WORD_LENGTH_MAX), nullable=True,
                              doc='The word created along the axis on which '

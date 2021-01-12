@@ -80,7 +80,6 @@ class BoardLayout(db.Model, ModelMixin, ModelSerializer):
     modifiers = relationship(
         'PositionedModifier',
         secondary=modifiers,
-        lazy='subquery',
         doc='The locations and types of modifiers.')
 
     @validates('rows')

@@ -24,7 +24,6 @@ class Dictionary(db.Model, ModelMixin, ModelSerializer):
     entries = db.relationship(
         'Entry',
         secondary=entries,
-        lazy='subquery',
         doc='The words in this dictionary.')
 
     def __repr__(self):
