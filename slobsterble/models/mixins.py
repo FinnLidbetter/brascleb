@@ -58,7 +58,6 @@ class ModelSerializer:
 
     def serialize(self, exclusions=None, override_mask=None):
         """Serialize model fields recursively subject to exclusions."""
-        model_columns = inspect(self).attrs.keys()
         result = {}
         if override_mask is not None and type(self) in override_mask:
             for column in override_mask[type(self)]:
@@ -67,9 +66,10 @@ class ModelSerializer:
                                                  override_mask)
                 result[column] = serialized
             return result
-        model_columns += self.serialize_include_fields
+        model_columns = inspect(self).attrs.keys()
         for column in model_columns:
-            if column in self.base_exclude_fields:
+            if column in self.base_exclude_fields and \
+                    column not in self.serialize_include_fields:
                 continue
             if column in self.serialize_exclude_fields:
                 continue

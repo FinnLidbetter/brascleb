@@ -1,8 +1,11 @@
+import os
+
 import click
 from flask import Flask, render_template
 from flask.cli import with_appcontext
 from flask_admin import Admin
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash
 
@@ -12,17 +15,20 @@ from slobsterble.utilities import SlobsterbleModelView
 db = SQLAlchemy()
 admin = Admin()
 login_manager = LoginManager()
+migrate = Migrate()
 
 
 def create_app():
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
-
     app.config.from_object(slobsterble.settings)
 
-    # Initialize Flask-SQLAlchemy and the init-db command.
     db.init_app(app)
-    app.cli.add_command(init_db_command)
+
+    migrate.init_app(
+        app=app, db=db, directory=os.path.join(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+            'alembic'), compare_type=True)
 
     login_manager.init_app(app)
 
@@ -81,20 +87,4 @@ def create_app():
     app.register_blueprint(auth.bp)
     app.register_blueprint(views.bp)
 
-    def index():
-        return render_template('index.html', title='Slobsterble')
-    app.add_url_rule('/', endpoint='index', view_func=index)
     return app
-
-
-def init_db():
-    db.drop_all()
-    db.create_all()
-
-
-@click.command('init-db')
-@with_appcontext
-def init_db_command():
-    """Clear existing data and create new tables."""
-    init_db()
-    click.echo('Initialized the database.')

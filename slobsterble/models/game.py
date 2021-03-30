@@ -8,35 +8,40 @@ from slobsterble.constants import WORD_LENGTH_MAX
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 
-rack = db.Table('rack',
-                db.Column('game_player_id',
-                          db.Integer,
-                          db.ForeignKey('game_player.id'),
-                          primary_key=True),
-                db.Column('tile_count_id',
-                          db.Integer,
-                          db.ForeignKey('tile_count.id'),
-                          primary_key=True))
+rack = db.Table(
+    'rack',
+    db.Column('game_player_id', db.Integer, db.ForeignKey('game_player.id'),
+              primary_key=True),
+    db.Column('tile_count_id', db.Integer, db.ForeignKey('tile_count.id'),
+              primary_key=True))
 
-board_state = db.Table('board_state',
-                       db.Column('game_id',
-                                 db.Integer,
-                                 db.ForeignKey('game.id'),
-                                 primary_key=True),
-                       db.Column('played_tile_id',
-                                 db.Integer,
-                                 db.ForeignKey('played_tile.id'),
-                                 primary_key=True))
+move_tiles = db.Table(
+    'move_rack_tiles',
+    db.Column('move_id', db.Integer, db.ForeignKey('move.id'),
+              primary_key=True),
+    db.Column('tile_count_id', db.Integer, db.ForeignKey('tile_count.id'),
+              primary_key=True))
 
-bag_tiles = db.Table('bag_tiles',
-                     db.Column('game_id',
-                               db.Integer,
-                               db.ForeignKey('game.id'),
-                               primary_key=True),
-                     db.Column('tile_count_id',
-                               db.Integer,
-                               db.ForeignKey('tile_count.id'),
-                               primary_key=True))
+move_played_tiles = db.Table(
+    'move_played_tiles',
+    db.Column('move_id', db.Integer, db.ForeignKey('move.id'),
+              primary_key=True),
+    db.Column('played_tile_id', db.Integer, db.ForeignKey('played_tile.id'),
+              primary_key=True))
+
+board_state = db.Table(
+    'board_state',
+    db.Column('game_id', db.Integer, db.ForeignKey('game.id'),
+              primary_key=True),
+    db.Column('played_tile_id', db.Integer, db.ForeignKey('played_tile.id'),
+              primary_key=True))
+
+bag_tiles = db.Table(
+    'bag_tiles',
+    db.Column('game_id', db.Integer, db.ForeignKey('game.id'),
+              primary_key=True),
+    db.Column('tile_count_id', db.Integer, db.ForeignKey('tile_count.id'),
+              primary_key=True))
 
 
 class GamePlayer(db.Model, ModelMixin, ModelSerializer):
@@ -156,36 +161,37 @@ class Game(db.Model, ModelMixin, ModelSerializer):
 
 class Move(db.Model, ModelMixin, ModelSerializer):
     """A played word in a turn and its score."""
-    game_player_id = db.Column(db.Integer,
-                               db.ForeignKey('game_player.id'),
-                               nullable=False)
-    game_player = relationship('GamePlayer',
-                               backref=db.backref('moves'),
-                               doc='The player that played this move.')
-    primary_word = db.Column(db.String(WORD_LENGTH_MAX), nullable=True,
-                             doc='The word created along the axis on which '
-                                 'multiple tiles were played. Defaults to '
-                                 'the word on the horizontal axis if a '
-                                 'single tile is played.')
+    game_player_id = db.Column(
+        db.Integer, db.ForeignKey('game_player.id'), nullable=False)
+    game_player = relationship(
+        'GamePlayer', backref=db.backref('moves'),
+        doc='The player that played this move.')
+    primary_word = db.Column(
+        db.String(WORD_LENGTH_MAX), nullable=True,
+        doc='The word created along the axis on which multiple tiles were '
+            'played. Defaults to the word on the horizontal axis if a single '
+            'tile is played.')
     secondary_words = db.Column(
-        db.String(WORD_LENGTH_MAX * (WORD_LENGTH_MAX + 1)),
-        nullable=True,
-        doc='Other words created in a single tile. Words are comma-separated.')
-    tiles_exchanged = db.Column(db.Integer,
-                                nullable=False,
-                                default=0,
-                                doc='The number of tiles that were exchanged '
-                                    'in this turn.')
-    turn_number = db.Column(db.Integer,
-                            nullable=False,
-                            doc='The turn number of the game that this move '
-                                'was played.')
-    score = db.Column(db.Integer,
-                      nullable=False,
-                      doc='The number of points scored with this move.')
-    played_time = db.Column(db.DateTime,
-                            nullable=False,
-                            doc='The date and time that this move was played.')
+        db.String(WORD_LENGTH_MAX * (WORD_LENGTH_MAX + 1)), nullable=True,
+        doc='Other words created in this turn. Words are comma-separated.')
+    rack_state = db.relationship(
+        'TileCount', secondary=move_tiles,
+        doc='The tiles held by the player when this move was played.')
+    played_tiles = db.relationship(
+        'PlayedTile', secondary=move_played_tiles,
+        doc='The positions of the tiles played in this move.')
+    tiles_exchanged = db.relationship(
+        'TileCount', secondary=move_tiles,
+        doc='The tiles exchanged by the player in this move.')
+    turn_number = db.Column(
+        db.Integer, nullable=False,
+        doc='The turn number of the game that this move was played.')
+    score = db.Column(
+        db.Integer, nullable=False,
+        doc='The number of points scored with this move.')
+    played_time = db.Column(
+        db.DateTime, nullable=False,
+        doc='The date and time that this move was played.')
 
     def __repr__(self):
         return '%d: %s' % (self.turn_number, self.primary_word)

@@ -4,7 +4,7 @@ import random
 from flask import Blueprint, Response, jsonify, render_template, request
 from flask_login import current_user, login_required
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload, subqueryload
+from sqlalchemy.orm import joinedload, raiseload, subqueryload
 
 from slobsterble import db
 from slobsterble.constants import (
@@ -15,10 +15,7 @@ from slobsterble.constants import (
     GAME_PLAYERS_MAX)
 from slobsterble.forms import (
     AddWordForm,
-    NewGameForm,
-    TemporaryPlayForm,
     set_dictionary_choices,
-    set_opponent_choices,
 )
 from slobsterble.game_setup_controller import (
     initialize_bag,
@@ -133,10 +130,34 @@ def get_game(game_id):
     return jsonify(serialized_game_state)
 
 
-#@bp.route('/game/<int:game_id>/move-history', methods=['GET'])
-#@login_required
-#def move_history(game_id):
-#    """Get the history of turns for a game."""
+@bp.route('/game/<int:game_id>/move-history', methods=['GET'])
+@login_required
+def move_history(game_id):
+    """Get the history of turns for a game."""
+    moves_query = db.session.query(GamePlayer).filter(
+        GamePlayer.game_id == game_id).join(
+        GamePlayer.player).join(Player.user).options(
+        joinedload(GamePlayer.player),
+        subqueryload(GamePlayer.moves).subqueryload(
+            Move.tiles_exchanged).joinedload(TileCount.tile))
+    if moves_query.count() == 0:
+        return Response('No game with ID %d.' % game_id, status=400)
+    if moves_query.filter(User.id == current_user.id).count() == 0:
+        # The user is not part of this game.
+        return Response('User is not authorized.', status=401)
+    game_player_moves_list = list(moves_query)
+    serialized_moves = []
+    for game_player_moves in game_player_moves_list:
+        serialized_game_player_moves = game_player_moves.serialize(
+            override_mask={
+                GamePlayer: ['player', 'moves'],
+                Move: ['primary_word', 'secondary_words',
+                       'tiles_exchanged', 'turn_number', 'score'],
+                Player: ['id', 'display_name']
+            }
+        )
+        serialized_moves.append(serialized_game_player_moves)
+    return jsonify({'game_players': serialized_moves})
 
 
 @bp.route('/game/<int:game_id>/verify-word/<string:word>', methods=['GET'])
