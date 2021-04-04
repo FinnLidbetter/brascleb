@@ -40,13 +40,13 @@ class ModelSerializer:
     # Use serialize_include_fields to override base exclusions.
     serialize_include_fields = []
 
-    def serialize_type(self, obj, exclusions=None, override_mask=None):
+    def serialize_type(self, obj, exclusions=None, override_mask=None, sort_keys=None):
         """Recursively serialize according to type."""
         if getattr(obj, 'serialize', None):
-            result = obj.serialize(exclusions, override_mask)
+            result = obj.serialize(exclusions, override_mask, sort_keys)
             return result
         elif isinstance(obj, list):
-            result = self.serialize_list(obj, exclusions, override_mask)
+            result = self.serialize_list(obj, exclusions, override_mask, sort_keys)
             return result
         elif isinstance(obj, datetime):
             return obj.timestamp()
@@ -56,14 +56,15 @@ class ModelSerializer:
             return None
         return str(obj)
 
-    def serialize(self, exclusions=None, override_mask=None):
+    def serialize(self, exclusions=None, override_mask=None, sort_keys=None):
         """Serialize model fields recursively subject to exclusions."""
         result = {}
         if override_mask is not None and type(self) in override_mask:
             for column in override_mask[type(self)]:
                 serialized = self.serialize_type(getattr(self, column),
                                                  exclusions,
-                                                 override_mask)
+                                                 override_mask,
+                                                 sort_keys)
                 result[column] = serialized
             return result
         model_columns = inspect(self).attrs.keys()
@@ -77,13 +78,16 @@ class ModelSerializer:
                     and column in exclusions[type(self)]:
                 continue
             serialized = self.serialize_type(
-                getattr(self, column), exclusions, override_mask)
+                getattr(self, column), exclusions, override_mask, sort_keys)
             result[column] = serialized
 
         return result
 
     @staticmethod
-    def serialize_list(items, exclusions=None, override_mask=None):
+    def serialize_list(items, exclusions=None, override_mask=None, sort_keys=None):
         """Serialize a list of objects."""
-        return [item.serialize(exclusions, override_mask)
-                for item in items]
+        serialized_list = [item.serialize(exclusions, override_mask, sort_keys)
+                           for item in items]
+        if sort_keys is not None and serialized_list and type(items[0]) in sort_keys:
+            serialized_list.sort(key=sort_keys[type(items[0])])
+        return serialized_list

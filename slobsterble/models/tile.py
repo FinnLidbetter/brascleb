@@ -50,6 +50,8 @@ class TileCount(db.Model, ModelMixin, ModelSerializer):
     __table_args__ = (
         UniqueConstraint('tile_id', 'count'),
     )
+    serialize_exclude_fields = ['tile_id']
+
     count = db.Column(db.Integer,
                       nullable=False,
                       doc='The number of copies of the tile.')

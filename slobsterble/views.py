@@ -4,7 +4,7 @@ import random
 from flask import Blueprint, Response, jsonify, render_template, request
 from flask_login import current_user, login_required
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload, raiseload, subqueryload
+from sqlalchemy.orm import joinedload, subqueryload
 
 from slobsterble import db
 from slobsterble.constants import (
@@ -139,7 +139,7 @@ def move_history(game_id):
         GamePlayer.player).join(Player.user).options(
         joinedload(GamePlayer.player),
         subqueryload(GamePlayer.moves).subqueryload(
-            Move.tiles_exchanged).joinedload(TileCount.tile))
+            Move.exchanged_tiles).joinedload(TileCount.tile))
     if moves_query.count() == 0:
         return Response('No game with ID %d.' % game_id, status=400)
     if moves_query.filter(User.id == current_user.id).count() == 0:
@@ -147,13 +147,28 @@ def move_history(game_id):
         return Response('User is not authorized.', status=401)
     game_player_moves_list = list(moves_query)
     serialized_moves = []
+
+    def _game_player_sort(game_player):
+        return game_player['turn_order']
+
+    def _move_sort(move):
+        return move['turn_number']
+
+    def _exchanged_sort(exchanged):
+        return exchanged['tile']['letter'] or chr(max(ord('z'), ord('Z')) + 1)
+
     for game_player_moves in game_player_moves_list:
         serialized_game_player_moves = game_player_moves.serialize(
             override_mask={
-                GamePlayer: ['player', 'moves'],
+                GamePlayer: ['player', 'moves', 'turn_order'],
                 Move: ['primary_word', 'secondary_words',
-                       'tiles_exchanged', 'turn_number', 'score'],
+                       'exchanged_tiles', 'turn_number', 'score'],
                 Player: ['id', 'display_name']
+            },
+            sort_keys={
+                GamePlayer: _game_player_sort,
+                Move: _move_sort,
+                TileCount: _exchanged_sort
             }
         )
         serialized_moves.append(serialized_game_player_moves)
@@ -410,32 +425,3 @@ def new_game():
         initialize_racks(game.id)
         return Response('New game created!', status=200)
     return Response('Unknown request method.', status=400)
-
-
-@bp.route('/add-word', methods=['GET', 'POST'])
-@login_required
-def add_word():
-    form = AddWordForm()
-    set_dictionary_choices(form)
-    if form.validate_on_submit():
-        dictionary_id = form.dictionary.data
-        word = form.word.data
-        lower_word = word.lower()
-        definition = form.definition.data
-        dictionary = db.session.query(Dictionary).filter(
-            Dictionary.id == dictionary_id).options(
-            subqueryload(Dictionary.entries)).first()
-        if dictionary is None:
-            return 'Dictionary %s not found.' % dictionary_id
-        entry = db.session.query(Entry).filter(Entry.word == lower_word).first()
-        if entry is None:
-            new_entry = Entry(word=lower_word, definition=definition)
-            db.session.add(new_entry)
-            dictionary.entries.append(new_entry)
-        else:
-            if entry in dictionary.entries:
-                return 'The word "%s" is already in this dictionary.' % lower_word
-            dictionary.entries.append(entry)
-        db.session.commit()
-        return 'Successfully added %s to the dictionary.' % lower_word
-    return render_template('dictionary/add_word.html', title='Add word', form=form)

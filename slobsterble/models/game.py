@@ -15,8 +15,15 @@ rack = db.Table(
     db.Column('tile_count_id', db.Integer, db.ForeignKey('tile_count.id'),
               primary_key=True))
 
-move_tiles = db.Table(
+move_rack_tiles = db.Table(
     'move_rack_tiles',
+    db.Column('move_id', db.Integer, db.ForeignKey('move.id'),
+              primary_key=True),
+    db.Column('tile_count_id', db.Integer, db.ForeignKey('tile_count.id'),
+              primary_key=True))
+
+move_exchanged_tiles = db.Table(
+    'move_exchanged_tiles',
     db.Column('move_id', db.Integer, db.ForeignKey('move.id'),
               primary_key=True),
     db.Column('tile_count_id', db.Integer, db.ForeignKey('tile_count.id'),
@@ -174,14 +181,14 @@ class Move(db.Model, ModelMixin, ModelSerializer):
     secondary_words = db.Column(
         db.String(WORD_LENGTH_MAX * (WORD_LENGTH_MAX + 1)), nullable=True,
         doc='Other words created in this turn. Words are comma-separated.')
-    rack_state = db.relationship(
-        'TileCount', secondary=move_tiles,
+    rack_tiles = db.relationship(
+        'TileCount', secondary=move_rack_tiles,
         doc='The tiles held by the player when this move was played.')
     played_tiles = db.relationship(
         'PlayedTile', secondary=move_played_tiles,
         doc='The positions of the tiles played in this move.')
-    tiles_exchanged = db.relationship(
-        'TileCount', secondary=move_tiles,
+    exchanged_tiles = db.relationship(
+        'TileCount', secondary=move_exchanged_tiles,
         doc='The tiles exchanged by the player in this move.')
     turn_number = db.Column(
         db.Integer, nullable=False,

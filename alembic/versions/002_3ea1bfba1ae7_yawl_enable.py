@@ -2,7 +2,7 @@
 Data migration to create YAWL and ENABLE dictionaries.
 
 Revision ID: 3ea1bfba1ae7
-Revises: d0b23f92aa9d
+Revises: d990b884a6aa
 Create Date: 2020-06-11 21:16:27.361069
 
 """
@@ -11,7 +11,7 @@ import sys
 from collections import defaultdict
 
 from alembic import op
-import sqlalchemy as sa
+from flask import current_app
 from sqlalchemy import orm
 
 sys.path.append(os.getcwd())
@@ -20,7 +20,7 @@ from slobsterble.models import Dictionary, Entry
 
 # revision identifiers, used by Alembic.
 revision = '3ea1bfba1ae7'
-down_revision = 'ace70822a4b1'
+down_revision = 'd990b884a6aa'
 branch_labels = None
 depends_on = None
 
@@ -30,6 +30,8 @@ def upgrade():
     session = orm.Session(bind=bind)
     dictionary_names = {'ENABLE (North American)': 'enable.txt',
                         'YAWL (Extended)': 'yawl.txt'}
+    if current_app.config['TESTING']:
+        dictionary_names = {'TEST_1': 'test_1.txt'}
     dict_words = defaultdict(list)
     entries = {}
     for dictionary_name, path in dictionary_names.items():

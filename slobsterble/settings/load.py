@@ -30,7 +30,7 @@ def load_config(settings, testing=False):
         grandparent_path, database_path)
     settings.SQLALCHEMY_TRACK_MODIFICATIONS = config.get(
         'db', 'SQLALCHEMY_TRACK_MODIFICATIONS')
-    # settings.SQLALCHEMY_ECHO = config.get('db', 'SQLALCHEMY_ECHO')
+    settings.SQLALCHEMY_ECHO = config.getboolean('db', 'SQLALCHEMY_ECHO')
     settings.ADMIN_USERNAME = config.get('db', 'ADMIN_USERNAME')
     settings.ADMIN_PASSWORD = config.get('db', 'ADMIN_PASSWORD')
     settings.SECRET_KEY = config.get('flask', 'SECRET_KEY')

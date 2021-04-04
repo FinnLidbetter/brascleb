@@ -1,8 +1,8 @@
 """Initialize the database models.
 
-Revision ID: ace70822a4b1
+Revision ID: d990b884a6aa
 Revises: 
-Create Date: 2021-03-29 21:39:05.554311
+Create Date: 2021-04-03 12:43:26.585786
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ace70822a4b1'
+revision = 'd990b884a6aa'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -226,6 +226,13 @@ def upgrade():
     sa.ForeignKeyConstraint(['my_player_id'], ['player.id'], ),
     sa.PrimaryKeyConstraint('my_player_id', 'friend_player_id')
     )
+    op.create_table('move_exchanged_tiles',
+    sa.Column('move_id', sa.Integer(), nullable=False),
+    sa.Column('tile_count_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['move_id'], ['move.id'], ),
+    sa.ForeignKeyConstraint(['tile_count_id'], ['tile_count.id'], ),
+    sa.PrimaryKeyConstraint('move_id', 'tile_count_id')
+    )
     op.create_table('move_played_tiles',
     sa.Column('move_id', sa.Integer(), nullable=False),
     sa.Column('played_tile_id', sa.Integer(), nullable=False),
@@ -263,6 +270,7 @@ def downgrade():
     op.drop_table('rack')
     op.drop_table('move_rack_tiles')
     op.drop_table('move_played_tiles')
+    op.drop_table('move_exchanged_tiles')
     op.drop_table('friends')
     op.drop_table('board_state')
     op.drop_table('bag_tiles')

@@ -1,6 +1,5 @@
 """Setup pytest fixtures."""
 
-
 import json
 
 import pytest
@@ -42,7 +41,7 @@ def _build_user(name):
 
 
 def _build_player(user, db):
-    default_dictionary = db.session.query(Dictionary).filter_by(id=2).first()
+    default_dictionary = db.session.query(Dictionary).filter_by(id=1).first()
     default_board_layout = db.session.query(BoardLayout).filter_by(
         name='Classic').first()
     default_distribution = db.session.query(Distribution).filter_by(
@@ -140,4 +139,23 @@ def alice_bob_game(alice, bob, db):
     db.session.delete(game)
     db.session.commit()
 
+
+@pytest.fixture
+def alice_bob_carol_game(alice, bob, carol, db):
+    game = Game(dictionary_id=1, board_layout_id=1)
+    alice_game_player = GamePlayer(player=alice.player, game=game, turn_order=0)
+    bob_game_player = GamePlayer(player=bob.player, game=game, turn_order=1)
+    carol_game_player = GamePlayer(player=carol.player, game=game, turn_order=2)
+    game.game_player_to_play = alice_game_player
+    db.session.add(game)
+    db.session.add(alice_game_player)
+    db.session.add(bob_game_player)
+    db.session.add(carol_game_player)
+    db.session.commit()
+    yield game, alice_game_player, bob_game_player, carol_game_player
+    db.session.delete(bob_game_player)
+    db.session.delete(alice_game_player)
+    db.session.delete(carol_game_player)
+    db.session.delete(game)
+    db.session.commit()
 
