@@ -4,14 +4,15 @@ from flask import (
     Blueprint,
     Response,
     flash,
+    g,
     redirect,
     render_template,
     request,
     url_for)
-from flask_login import current_user, login_user, logout_user
+from flask_restful import Resource
 from werkzeug.security import generate_password_hash
 
-from slobsterble import db
+from slobsterble.app import auth, db
 from slobsterble.models import (
     BoardLayout,
     Dictionary,
@@ -22,6 +23,26 @@ from slobsterble.models import (
 from slobsterble.forms import LoginForm
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+
+@auth.verify_password
+def verify_password(username_or_token, password):
+    """Authenticate a user."""
+    # First try to authenticate by token
+    user = User.verify_auth_token(username_or_token)
+    if not user:
+        # Try to authenticate with username/password
+        user = User.query.filter_by(username=username_or_token).first()
+        if not user or not user.verify_password(password):
+            return False
+    g.user = user
+    return True
+
+class TokenView(Resource):
+
+    @staticmethod
+    @auth.login_required
+    def post():
 
 
 @bp.route('/login', methods=('GET', 'POST'))

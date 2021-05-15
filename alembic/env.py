@@ -8,7 +8,7 @@ from flask import current_app
 from sqlalchemy import engine_from_config, MetaData
 from sqlalchemy import pool
 
-from slobsterble import db
+from slobsterble.app import db
 
 sys.path.append(os.getcwd())
 

@@ -3,7 +3,7 @@
 from sqlalchemy import func, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.constants import WORD_LENGTH_MAX
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
@@ -89,14 +89,6 @@ class Game(db.Model, ModelMixin, ModelSerializer):
     """A game."""
     __tablename__ = 'game'
 
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ['id', 'game_player_to_play_id'],
-            ['game_player.game_id', 'game_player.id'],
-            name='fk_game_player_to_play'
-        ),
-    )
-
     id = db.Column(db.Integer, primary_key=True, autoincrement='ignore_fk')
 
     serialize_exclude_fields = ['dictionary_id',
@@ -123,9 +115,14 @@ class Game(db.Model, ModelMixin, ModelSerializer):
                                 nullable=False)
     board_layout = relationship('BoardLayout',
                                 doc='The board layout being used by this game.')
+    initial_distribution_id = db.Column(db.Integer,
+                                        db.ForeignKey('distribution.id'),
+                                        nullable=False)
+    initial_distribution = relationship('Distribution',
+                                        doc='The initial tile distribution.')
 
     started = db.Column(db.DateTime,
-                        default=func.now(),
+                        default=func.utcnow(),
                         nullable=False,
                         doc='The date and time that this game was started.')
     completed = db.Column(db.DateTime,
@@ -141,22 +138,19 @@ class Game(db.Model, ModelMixin, ModelSerializer):
         foreign_keys=GamePlayer.game_id,
         backref="game")
 
-    game_player_to_play_id = db.Column(db.Integer)
+    @property
+    def whose_turn(self):
+        for game_player in self.game_players:
+            if self.turn_number % len(self.game_players) == game_player.turn_order:
+                return game_player
 
-    game_player_to_play = relationship(
-        GamePlayer,
-        primaryjoin=game_player_to_play_id == GamePlayer.id,
-        foreign_keys=game_player_to_play_id,
-        post_update=True,
-        doc='The game player whose turn it is to play.')
+    @property
+    def whose_turn_name(self):
+        return self.whose_turn.player.display_name
 
     @property
     def num_players(self):
         return len(self.game_players)
-
-    @property
-    def whose_turn_name(self):
-        return self.game_player_to_play.player.display_name
 
     @property
     def num_tiles_remaining(self):

@@ -6,12 +6,11 @@ from wtforms import (
     SelectMultipleField,
     StringField,
     SubmitField,
-    TextField,
 )
 from wtforms.validators import DataRequired
 from wtforms.widgets import TextArea
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.models import Player, Dictionary
 
 

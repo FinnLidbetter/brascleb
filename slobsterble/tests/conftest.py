@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from slobsterble import slobsterble
+from slobsterble.app import db as database, create_app
 from slobsterble.models import (
     BoardLayout,
     Dictionary,
@@ -18,7 +18,7 @@ from slobsterble.models import (
 
 @pytest.fixture(scope='session', autouse=True)
 def app_fixture():
-    slobsterble_app = slobsterble.create_app()
+    slobsterble_app = create_app()
     return slobsterble_app
 
 
@@ -31,7 +31,7 @@ def client(app_fixture):
 @pytest.fixture(scope='session', autouse=True)
 def db(app_fixture):
     with app_fixture.app_context():
-        yield slobsterble.db
+        yield database
 
 
 def _build_user(name):

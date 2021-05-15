@@ -1,12 +1,12 @@
 """API views."""
 import random
 
-from flask import Blueprint, Response, jsonify, render_template, request
+from flask import Blueprint, Response, jsonify, request
 from flask_login import current_user, login_required
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, subqueryload
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.constants import (
     ACTIVE_GAME_LIMIT,
     DISPLAY_NAME_LENGTH_MAX,
@@ -51,9 +51,11 @@ from slobsterble.models import (
     TileCount,
     User,
 )
+from slobsterble.game_play_views import bp as game_blueprint
 
 
 bp = Blueprint('api', __name__, url_prefix='/api')
+bp.register_blueprint(game_blueprint)
 
 
 @bp.route('/games', methods=['GET'])

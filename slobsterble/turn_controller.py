@@ -7,7 +7,7 @@ from collections import defaultdict
 from sqlalchemy import func
 from sqlalchemy.orm import aliased, joinedload, subqueryload
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.constants import (
     BINGO_BONUS,
     GAME_COLUMNS_MAX,

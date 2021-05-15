@@ -2,12 +2,14 @@
 
 import random
 
+from flask import current_app
 from flask_login import UserMixin
+from itsdangerous import (TimedJSONWebSignatureSerializer, BadSignature, SignatureExpired)
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.orm import backref, relation, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from slobsterble import db, login_manager
+from slobsterble.app import db
 from slobsterble.constants import (
     DISPLAY_NAME_LENGTH_MAX,
     FRIEND_KEY_CHARACTERS,
@@ -44,12 +46,6 @@ friends = db.Table(
     PrimaryKeyConstraint('my_player_id', 'friend_player_id'))
 
 
-# Allow flask_login to load users.
-@login_manager.user_loader
-def load_user(id):
-    return User.query.get(int(id))
-
-
 class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
     """A user model for authentication purposes."""
     # The player attribute is an excluded backref to avoid
@@ -68,6 +64,23 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def generate_auth_token(self, expiration=600):
+        serializer = TimedJSONWebSignatureSerializer(
+            current_app.config['SECRET_KEY'], expires_in=expiration)
+        return serializer.dumps({'id': self.id})
+
+    @staticmethod
+    def verify_auth_token(token):
+        serializer = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+        try:
+            data = serializer.loads(token)
+        except SignatureExpired:
+            return None  # valid token, but expired
+        except BadSignature:
+            return None  # invalid token
+        user = User.query.get(data['id'])
+        return user
 
     def __repr__(self):
         return self.username

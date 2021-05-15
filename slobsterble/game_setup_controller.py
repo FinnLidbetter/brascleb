@@ -4,7 +4,7 @@ import random
 
 from sqlalchemy.orm import joinedload, subqueryload
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.constants import TILES_ON_RACK_MAX
 from slobsterble.models import Game, GamePlayer, TileCount
 

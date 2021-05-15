@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.inspection import inspect
 
-from slobsterble import db
+from slobsterble.app import db
 
 
 class MetadataMixin:
@@ -59,8 +59,8 @@ class ModelSerializer:
     def serialize(self, exclusions=None, override_mask=None, sort_keys=None):
         """Serialize model fields recursively subject to exclusions."""
         result = {}
-        if override_mask is not None and type(self) in override_mask:
-            for column in override_mask[type(self)]:
+        if override_mask is not None and type(self).__name__ in override_mask:
+            for column in override_mask[type(self).__name__]:
                 serialized = self.serialize_type(getattr(self, column),
                                                  exclusions,
                                                  override_mask,
@@ -74,8 +74,8 @@ class ModelSerializer:
                 continue
             if column in self.serialize_exclude_fields:
                 continue
-            if exclusions is not None and type(self) in exclusions \
-                    and column in exclusions[type(self)]:
+            if exclusions is not None and type(self).__name__ in exclusions \
+                    and column in exclusions[type(self).__name__]:
                 continue
             serialized = self.serialize_type(
                 getattr(self, column), exclusions, override_mask, sort_keys)
@@ -88,6 +88,6 @@ class ModelSerializer:
         """Serialize a list of objects."""
         serialized_list = [item.serialize(exclusions, override_mask, sort_keys)
                            for item in items]
-        if sort_keys is not None and serialized_list and type(items[0]) in sort_keys:
-            serialized_list.sort(key=sort_keys[type(items[0])])
+        if sort_keys is not None and serialized_list and type(items[0]).__name__ in sort_keys:
+            serialized_list.sort(key=sort_keys[type(items[0]).__name__])
         return serialized_list

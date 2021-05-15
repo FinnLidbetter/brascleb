@@ -3,7 +3,7 @@
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 tile_distribution = db.Table('tile_distribution',

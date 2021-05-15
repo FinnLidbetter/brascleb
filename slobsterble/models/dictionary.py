@@ -1,6 +1,6 @@
 """Models relating to the dictionary and playable words."""
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 entries = db.Table(

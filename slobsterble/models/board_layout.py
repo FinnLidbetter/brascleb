@@ -1,7 +1,7 @@
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, validates
 
-from slobsterble import db
+from slobsterble.app import db
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
 
 
