@@ -1,9 +1,9 @@
 from flask import Response, request, g, jsonify
 from flask_restful import Resource
+from flask_jwt_extended import jwt_required
 import sqlalchemy.orm.exc
 
 import slobsterble.play_exceptions
-from slobsterble.app import auth
 from slobsterble.game_play_controller import (
     StatelessValidator,
     StatefulValidator,
@@ -18,7 +18,7 @@ from slobsterble.game_play_controller import (
 class GameView(Resource):
 
     @staticmethod
-    @auth.login_required
+    @jwt_required()
     def get(game_id):
         """
         Get the current state of the game.
@@ -63,7 +63,7 @@ class GameView(Resource):
         return jsonify(serialized_game_state)
 
     @staticmethod
-    @auth.login_required
+    @jwt_required()
     def post(game_id):
         """API to play a turn of the game."""
         data = request.get_json()

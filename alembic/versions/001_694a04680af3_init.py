@@ -1,8 +1,9 @@
-"""Initialize the database models.
+"""
+Initalize models.
 
-Revision ID: d990b884a6aa
+Revision ID: 694a04680af3
 Revises: 
-Create Date: 2021-04-03 12:43:26.585786
+Create Date: 2021-05-16 16:26:53.724311
 
 """
 from alembic import op
@@ -10,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd990b884a6aa'
+revision = '694a04680af3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -53,34 +54,6 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_entry_word'), 'entry', ['word'], unique=True)
-    op.create_table('game',
-    sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement='ignore_fk', nullable=False),
-    sa.Column('dictionary_id', sa.Integer(), nullable=False),
-    sa.Column('board_layout_id', sa.Integer(), nullable=False),
-    sa.Column('started', sa.DateTime(), nullable=False),
-    sa.Column('completed', sa.DateTime(), nullable=True),
-    sa.Column('turn_number', sa.Integer(), nullable=False),
-    sa.Column('game_player_to_play_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['board_layout_id'], ['board_layout.id'], ),
-    sa.ForeignKeyConstraint(['dictionary_id'], ['dictionary.id'], ),
-    sa.ForeignKeyConstraint(['id', 'game_player_to_play_id'], ['game_player.game_id', 'game_player.id'], name='fk_game_player_to_play'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('game_player',
-    sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('player_id', sa.Integer(), nullable=False),
-    sa.Column('score', sa.Integer(), nullable=False),
-    sa.Column('turn_order', sa.Integer(), nullable=False),
-    sa.Column('game_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['game_id'], ['game.id'], ),
-    sa.ForeignKeyConstraint(['player_id'], ['player.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('player_id', 'game_id')
-    )
     op.create_table('modifier',
     sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
@@ -135,25 +108,27 @@ def upgrade():
     sa.ForeignKeyConstraint(['entry_id'], ['entry.id'], ),
     sa.PrimaryKeyConstraint('entry_id', 'dictionary_id')
     )
+    op.create_table('game',
+    sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement='ignore_fk', nullable=False),
+    sa.Column('dictionary_id', sa.Integer(), nullable=False),
+    sa.Column('board_layout_id', sa.Integer(), nullable=False),
+    sa.Column('initial_distribution_id', sa.Integer(), nullable=False),
+    sa.Column('started', sa.DateTime(), nullable=False),
+    sa.Column('completed', sa.DateTime(), nullable=True),
+    sa.Column('turn_number', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['board_layout_id'], ['board_layout.id'], ),
+    sa.ForeignKeyConstraint(['dictionary_id'], ['dictionary.id'], ),
+    sa.ForeignKeyConstraint(['initial_distribution_id'], ['distribution.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('modifiers',
     sa.Column('board_layout_id', sa.Integer(), nullable=False),
     sa.Column('positioned_modifier_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['board_layout_id'], ['board_layout.id'], ),
     sa.ForeignKeyConstraint(['positioned_modifier_id'], ['positioned_modifier.id'], ),
     sa.PrimaryKeyConstraint('board_layout_id', 'positioned_modifier_id')
-    )
-    op.create_table('move',
-    sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('game_player_id', sa.Integer(), nullable=False),
-    sa.Column('primary_word', sa.String(length=21), nullable=True),
-    sa.Column('secondary_words', sa.String(length=462), nullable=True),
-    sa.Column('turn_number', sa.Integer(), nullable=False),
-    sa.Column('score', sa.Integer(), nullable=False),
-    sa.Column('played_time', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['game_player_id'], ['game_player.id'], ),
-    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('played_tile',
     sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
@@ -226,6 +201,46 @@ def upgrade():
     sa.ForeignKeyConstraint(['my_player_id'], ['player.id'], ),
     sa.PrimaryKeyConstraint('my_player_id', 'friend_player_id')
     )
+    op.create_table('game_player',
+    sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('player_id', sa.Integer(), nullable=False),
+    sa.Column('score', sa.Integer(), nullable=False),
+    sa.Column('turn_order', sa.Integer(), nullable=False),
+    sa.Column('game_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['game_id'], ['game.id'], ),
+    sa.ForeignKeyConstraint(['player_id'], ['player.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('player_id', 'game_id')
+    )
+    op.create_table('tile_distribution',
+    sa.Column('distribution_id', sa.Integer(), nullable=False),
+    sa.Column('tile_count_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['distribution_id'], ['distribution.id'], ),
+    sa.ForeignKeyConstraint(['tile_count_id'], ['tile_count.id'], ),
+    sa.PrimaryKeyConstraint('distribution_id', 'tile_count_id')
+    )
+    op.create_table('move',
+    sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('game_player_id', sa.Integer(), nullable=False),
+    sa.Column('primary_word', sa.String(length=21), nullable=True),
+    sa.Column('secondary_words', sa.String(length=462), nullable=True),
+    sa.Column('turn_number', sa.Integer(), nullable=False),
+    sa.Column('score', sa.Integer(), nullable=False),
+    sa.Column('played_time', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['game_player_id'], ['game_player.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('rack',
+    sa.Column('game_player_id', sa.Integer(), nullable=False),
+    sa.Column('tile_count_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['game_player_id'], ['game_player.id'], ),
+    sa.ForeignKeyConstraint(['tile_count_id'], ['tile_count.id'], ),
+    sa.PrimaryKeyConstraint('game_player_id', 'tile_count_id')
+    )
     op.create_table('move_exchanged_tiles',
     sa.Column('move_id', sa.Integer(), nullable=False),
     sa.Column('tile_count_id', sa.Integer(), nullable=False),
@@ -247,30 +262,18 @@ def upgrade():
     sa.ForeignKeyConstraint(['tile_count_id'], ['tile_count.id'], ),
     sa.PrimaryKeyConstraint('move_id', 'tile_count_id')
     )
-    op.create_table('rack',
-    sa.Column('game_player_id', sa.Integer(), nullable=False),
-    sa.Column('tile_count_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['game_player_id'], ['game_player.id'], ),
-    sa.ForeignKeyConstraint(['tile_count_id'], ['tile_count.id'], ),
-    sa.PrimaryKeyConstraint('game_player_id', 'tile_count_id')
-    )
-    op.create_table('tile_distribution',
-    sa.Column('distribution_id', sa.Integer(), nullable=False),
-    sa.Column('tile_count_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['distribution_id'], ['distribution.id'], ),
-    sa.ForeignKeyConstraint(['tile_count_id'], ['tile_count.id'], ),
-    sa.PrimaryKeyConstraint('distribution_id', 'tile_count_id')
-    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('tile_distribution')
-    op.drop_table('rack')
     op.drop_table('move_rack_tiles')
     op.drop_table('move_played_tiles')
     op.drop_table('move_exchanged_tiles')
+    op.drop_table('rack')
+    op.drop_table('move')
+    op.drop_table('tile_distribution')
+    op.drop_table('game_player')
     op.drop_table('friends')
     op.drop_table('board_state')
     op.drop_table('bag_tiles')
@@ -278,16 +281,14 @@ def downgrade():
     op.drop_table('tile_count')
     op.drop_table('player')
     op.drop_table('played_tile')
-    op.drop_table('move')
     op.drop_table('modifiers')
+    op.drop_table('game')
     op.drop_table('entries')
     op.drop_table('user')
     op.drop_table('tile')
     op.drop_table('role')
     op.drop_table('positioned_modifier')
     op.drop_table('modifier')
-    op.drop_table('game_player')
-    op.drop_table('game')
     op.drop_index(op.f('ix_entry_word'), table_name='entry')
     op.drop_table('entry')
     op.drop_table('distribution')

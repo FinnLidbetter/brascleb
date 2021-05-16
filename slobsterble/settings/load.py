@@ -1,6 +1,7 @@
 """Load settings from a configuration file."""
 
 import configparser
+import datetime
 import pathlib
 import os
 
@@ -34,3 +35,9 @@ def load_config(settings, testing=False):
     settings.ADMIN_USERNAME = config.get('db', 'ADMIN_USERNAME')
     settings.ADMIN_PASSWORD = config.get('db', 'ADMIN_PASSWORD')
     settings.SECRET_KEY = config.get('flask', 'SECRET_KEY')
+    settings.JWT_SECRET_KEY = config.get('flask', 'JWT_SECRET_KEY')
+    settings.JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(
+        hours=config.getint('flask', 'JWT_ACCESS_TOKEN_EXPIRE_MINUTES'))
+    settings.JWT_REFRESH_TOKEN_EXPIRES = datetime.timedelta(
+        days=config.getint('flask', 'JWT_REFRESH_TOKEN_EXPIRE_HOURS'))
+    settings.JWT_COOKIE_SECURE = config.getboolean('flask', 'JWT_COOKIE_SECURE')

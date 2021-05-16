@@ -2,9 +2,7 @@
 
 import random
 
-from flask import current_app
 from flask_login import UserMixin
-from itsdangerous import (TimedJSONWebSignatureSerializer, BadSignature, SignatureExpired)
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.orm import backref, relation, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -64,23 +62,6 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
-    def generate_auth_token(self, expiration=600):
-        serializer = TimedJSONWebSignatureSerializer(
-            current_app.config['SECRET_KEY'], expires_in=expiration)
-        return serializer.dumps({'id': self.id})
-
-    @staticmethod
-    def verify_auth_token(token):
-        serializer = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
-        try:
-            data = serializer.loads(token)
-        except SignatureExpired:
-            return None  # valid token, but expired
-        except BadSignature:
-            return None  # invalid token
-        user = User.query.get(data['id'])
-        return user
 
     def __repr__(self):
         return self.username

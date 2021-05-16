@@ -4,10 +4,10 @@ import os
 
 from flask import Flask
 from flask_admin import Admin
-from flask_httpauth import HTTPBasicAuth
 from flask_migrate import Migrate
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
 from werkzeug.security import generate_password_hash
 
 import slobsterble.settings
@@ -16,8 +16,8 @@ from slobsterble.utilities import SlobsterbleModelView
 db = SQLAlchemy()
 admin = Admin()
 migrate = Migrate()
-auth = HTTPBasicAuth()
 api = Api()
+jwt = JWTManager()
 
 
 def init_db(app):
@@ -85,19 +85,29 @@ def init_admin(app):
         SlobsterbleModelView(slobsterble.models.User, db.session))
 
 
-def init_blueprints(app):
-    """Register blueprints with the app."""
-    from slobsterble import auth, views, game_play_views
-    app.register_blueprint(auth.bp)
-    app.register_blueprint(views.bp)
-    app.register_blueprint(game_play_views.bp)
-
-
 def init_api(app):
-    from slobsterble.apis import Auth, Game
+    from slobsterble.apis import AdminLoginView, LoginView, GameView, RegisterView, AdminLogoutView, IndexView
+    api.add_resource(IndexView, '/', '/index')
+    api.add_resource(AdminLoginView, '/admin-login')
+    api.add_resource(AdminLogoutView, '/admin-logout')
+    api.add_resource(RegisterView, '/register')
+    api.add_resource(LoginView, '/login')
+    api.add_resource(GameView, '/game/<int:game_id>')
     api.init_app(app)
-    api.add_resource(Auth, '/auth')
-    api.add_resource(Game, '/game/<int:game_id>')
+
+
+def init_jwt(app):
+    from slobsterble.models import User
+    jwt.init_app(app)
+
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        identity = jwt_data["sub"]
+        return User.query.filter_by(id=identity).one_or_none()
+
+    @jwt.user_identity_loader
+    def user_identity_callback(user):
+        return user.id
 
 
 def create_app():
@@ -107,7 +117,7 @@ def create_app():
 
     init_db(app)
     init_migrate(app)
-    init_blueprints(app)
     init_api(app)
+    init_jwt(app)
 
     return app
