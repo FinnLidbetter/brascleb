@@ -52,7 +52,6 @@ def init_migrate(app):
 def init_admin(app):
     """Initialise model views."""
     import slobsterble.models
-    admin.init_app(app)
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.BoardLayout, db.session))
     admin.add_view(
@@ -83,6 +82,7 @@ def init_admin(app):
         SlobsterbleModelView(slobsterble.models.Player, db.session))
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.User, db.session))
+    admin.init_app(app)
 
 
 def init_api(app):
@@ -93,6 +93,20 @@ def init_api(app):
     api.add_resource(RegisterView, '/register')
     api.add_resource(LoginView, '/login')
     api.add_resource(GameView, '/game/<int:game_id>')
+
+    from flask_restful import Resource
+    from flask import render_template, make_response
+
+    class HelloView(Resource):
+
+        @staticmethod
+        def get(name=None):
+            from flask import Response
+            if not name:
+                name = 'default'
+            return Response(render_template('hello.html', name=name), status=200)
+    api.add_resource(HelloView, '/hello', '/hello/<string:name>')
+
     api.init_app(app)
 
 
@@ -117,7 +131,8 @@ def create_app():
 
     init_db(app)
     init_migrate(app)
-    init_api(app)
     init_jwt(app)
+    init_api(app)
+    init_admin(app)
 
     return app

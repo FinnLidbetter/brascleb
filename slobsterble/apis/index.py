@@ -1,5 +1,5 @@
 
-from flask import render_template
+from flask import render_template, Response
 from flask_restful import Resource
 
 
@@ -7,4 +7,4 @@ class IndexView(Resource):
 
     @staticmethod
     def get():
-        return render_template('index.html')
+        return Response(render_template('index.html'), status=200)
