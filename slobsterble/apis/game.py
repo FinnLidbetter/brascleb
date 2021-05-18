@@ -1,9 +1,13 @@
+"""Views related to game play."""
+
+import sqlalchemy.orm.exc
 from flask import Response, request, g, jsonify
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required
-import sqlalchemy.orm.exc
+from flask_jwt_extended import jwt_required, current_user
+from sqlalchemy.orm import subqueryload, joinedload
 
 import slobsterble.play_exceptions
+from slobsterble.app import db
 from slobsterble.game_play_controller import (
     StatelessValidator,
     StatefulValidator,
@@ -13,6 +17,7 @@ from slobsterble.game_play_controller import (
     fetch_game_state,
     get_game_player,
 )
+from slobsterble.models import (GamePlayer, Move, TileCount, Player, User)
 
 
 class GameView(Resource):
@@ -92,3 +97,51 @@ class GameView(Resource):
             return Response(str(play_error), status=play_error.status_code)
         except sqlalchemy.orm.exc.NoResultFound:
             return Response('Game does not exist.', status=400)
+
+
+class MoveHistoryView(Resource):
+
+    @staticmethod
+    @jwt_required()
+    def get(game_id):
+        """Get the history of turns for a game."""
+        moves_query = db.session.query(GamePlayer).filter(
+            GamePlayer.game_id == game_id).join(
+            GamePlayer.player).join(Player.user).options(
+            joinedload(GamePlayer.player),
+            subqueryload(GamePlayer.moves).subqueryload(
+                Move.exchanged_tiles).joinedload(TileCount.tile))
+        if moves_query.count() == 0:
+            return Response('No game with ID %d.' % game_id, status=400)
+        if moves_query.filter(User.id == current_user.id).count() == 0:
+            # The user is not part of this game.
+            return Response('User is not authorized.', status=401)
+        game_player_moves_list = list(moves_query)
+        serialized_moves = []
+
+        def _game_player_sort(game_player):
+            return game_player['turn_order']
+
+        def _move_sort(move):
+            return move['turn_number']
+
+        def _exchanged_sort(exchanged):
+            return exchanged['tile']['letter'] or chr(
+                max(ord('z'), ord('Z')) + 1)
+
+        for game_player_moves in game_player_moves_list:
+            serialized_game_player_moves = game_player_moves.serialize(
+                override_mask={
+                    'GamePlayer': ['player', 'moves', 'turn_order'],
+                    'Move': ['primary_word', 'secondary_words',
+                             'exchanged_tiles', 'turn_number', 'score'],
+                    'Player': ['id', 'display_name']
+                },
+                sort_keys={
+                    'GamePlayer': _game_player_sort,
+                    'Move': _move_sort,
+                    'TileCount': _exchanged_sort
+                }
+            )
+            serialized_moves.append(serialized_game_player_moves)
+        return jsonify({'game_players': serialized_moves})

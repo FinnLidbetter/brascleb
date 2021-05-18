@@ -122,7 +122,7 @@ class Game(db.Model, ModelMixin, ModelSerializer):
                                         doc='The initial tile distribution.')
 
     started = db.Column(db.DateTime,
-                        default=func.utcnow(),
+                        default=func.now(),
                         nullable=False,
                         doc='The date and time that this game was started.')
     completed = db.Column(db.DateTime,

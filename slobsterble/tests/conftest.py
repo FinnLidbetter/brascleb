@@ -1,8 +1,7 @@
 """Setup pytest fixtures."""
 
-import json
-
 import pytest
+from flask_jwt_extended import create_access_token
 
 from slobsterble.app import db as database, create_app
 from slobsterble.models import (
@@ -92,40 +91,30 @@ def carol(db):
     db.session.commit()
 
 
-def _login(client, username, password):
-    client.post('/auth/login',
-                data=json.dumps({'username': username, 'password': password}),
-                content_type='application/json')
+@pytest.fixture(scope='session', autouse=True)
+def alice_headers(alice):
+    access_token = create_access_token(alice)
+    headers = {'Authorization': 'Bearer {}'.format(access_token)}
+    return headers
 
 
-def _logout(client):
-    client.post('/auth/logout')
+@pytest.fixture(scope='session', autouse=True)
+def bob_headers(bob):
+    access_token = create_access_token(bob)
+    headers = {'Authorization': 'Bearer {}'.format(access_token)}
+    return headers
 
 
-@pytest.fixture
-def alice_client(client, alice):
-    _login(client, alice.username, 'Alice')
-    yield client
-    _logout(client)
-
-
-@pytest.fixture
-def bob_client(client, bob):
-    _login(client, bob.username, 'Bob')
-    yield client
-    _logout(client)
-
-
-@pytest.fixture
-def carol_client(client, carol):
-    _login(client, carol.username, 'Carol')
-    yield client
-    _logout(client)
+@pytest.fixture(scope='session', autouse=True)
+def carol_headers(carol):
+    access_token = create_access_token(carol)
+    headers = {'Authorization': 'Bearer {}'.format(access_token)}
+    return headers
 
 
 @pytest.fixture
 def alice_bob_game(alice, bob, db):
-    game = Game(dictionary_id=1, board_layout_id=1)
+    game = Game(dictionary_id=1, board_layout_id=1, initial_distribution_id=1)
     alice_game_player = GamePlayer(player=alice.player, game=game, turn_order=0)
     bob_game_player = GamePlayer(player=bob.player, game=game, turn_order=1)
     game.game_player_to_play = alice_game_player
@@ -142,7 +131,7 @@ def alice_bob_game(alice, bob, db):
 
 @pytest.fixture
 def alice_bob_carol_game(alice, bob, carol, db):
-    game = Game(dictionary_id=1, board_layout_id=1)
+    game = Game(dictionary_id=1, board_layout_id=1, initial_distribution_id=1)
     alice_game_player = GamePlayer(player=alice.player, game=game, turn_order=0)
     bob_game_player = GamePlayer(player=bob.player, game=game, turn_order=1)
     carol_game_player = GamePlayer(player=carol.player, game=game, turn_order=2)

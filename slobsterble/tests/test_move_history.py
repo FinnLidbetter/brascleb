@@ -6,25 +6,36 @@ import json
 import slobsterble.models
 
 
-def test_game_does_not_exist(alice_client):
+def test_game_does_not_exist(client, alice_headers):
     """Test game not found returns 400."""
-    resp = alice_client.get('/api/game/1/move-history')
+    resp = client.get('/game/1/move-history', headers=alice_headers)
     assert resp.status_code == 400
     assert resp.get_data(as_text=True) == 'No game with ID 1.'
 
 
-def test_unauthorized_user(carol_client, alice_bob_game):
+def test_unauthorized_user(client, carol_headers, alice_bob_game):
     """A user that is not a player in the game cannot see the move history."""
     game, _, __ = alice_bob_game
-    resp = carol_client.get('/api/game/%s/move-history' % str(game.id))
+    resp = client.get(f'/game/{game.id}/move-history',
+                      headers=carol_headers)
     assert resp.status_code == 401
     assert resp.get_data(as_text=True) == 'User is not authorized.'
 
 
-def test_no_moves(alice_client, alice_bob_game):
+def test_no_authorization(client, alice_bob_game):
+    """The API returns no result if there is no authorization."""
+    game, _, __ = alice_bob_game
+    resp = client.get(f'/game/{game.id}/move-history')
+    assert resp.status_code == 401
+    assert "Missing JWT in headers or cookies" in \
+           json.loads(resp.get_data(as_text=True))['msg']
+
+
+def test_no_moves(client, alice_headers, alice_bob_game):
     """Test getting the move history when there have been no moves yet."""
     game, _, __ = alice_bob_game
-    resp = alice_client.get('/api/game/%s/move-history' % str(game.id))
+    resp = client.get(f'/game/{game.id}/move-history',
+                      headers=alice_headers)
     assert resp.status_code == 200
     data = json.loads(resp.get_data())
     assert len(data['game_players']) == 2
@@ -32,7 +43,7 @@ def test_no_moves(alice_client, alice_bob_game):
         assert player_moves['moves'] == []
 
 
-def test_one_regular_move(alice_client, bob_client, alice_bob_game, db):
+def test_one_regular_move(client, alice_headers, bob_headers, alice_bob_game, db):
     """Test fetching move history from a game with one word move played."""
     game, alice_game_player, bob_game_player = alice_bob_game
     move = slobsterble.models.Move(
@@ -43,8 +54,8 @@ def test_one_regular_move(alice_client, bob_client, alice_bob_game, db):
     db.session.add(move)
     db.session.commit()
     # Results are the same for both players.
-    for client in alice_client, bob_client:
-        resp = client.get('/api/game/%s/move-history' % str(game.id))
+    for headers in alice_headers, bob_headers:
+        resp = client.get(f'/game/{game.id}/move-history', headers=headers)
         data = json.loads(resp.get_data())
         assert resp.status_code == 200
         assert len(data['game_players']) == 2
@@ -63,7 +74,7 @@ def test_one_regular_move(alice_client, bob_client, alice_bob_game, db):
     db.session.commit()
 
 
-def test_exchange(alice_client, alice_bob_game, db):
+def test_exchange(client, alice_headers, alice_bob_game, db):
     """Test that a move where tiles were exchanged serializes correctly."""
     game, alice_game_player, bob_game_player = alice_bob_game
     a_3 = db.session.query(slobsterble.models.TileCount).filter_by(
@@ -87,7 +98,7 @@ def test_exchange(alice_client, alice_bob_game, db):
         played_time=datetime.datetime.now())
     db.session.add(move)
     db.session.commit()
-    resp = alice_client.get('/api/game/%s/move-history' % str(game.id))
+    resp = client.get(f'/game/{game.id}/move-history', headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
     assert len(data['game_players']) == 2
@@ -138,7 +149,7 @@ def test_exchange(alice_client, alice_bob_game, db):
     db.session.commit()
 
 
-def test_pass_move(alice_client, alice_bob_game, db):
+def test_pass_move(client, alice_headers, alice_bob_game, db):
     """Test getting move history including a passed turn."""
     game, alice_game_player, bob_game_player = alice_bob_game
     move = slobsterble.models.Move(
@@ -150,7 +161,7 @@ def test_pass_move(alice_client, alice_bob_game, db):
         played_time=datetime.datetime.now())
     db.session.add(move)
     db.session.commit()
-    resp = alice_client.get('/api/game/%s/move-history' % str(game.id))
+    resp = client.get(f'/game/{game.id}/move-history', headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
     assert len(data['game_players']) == 2
@@ -163,7 +174,7 @@ def test_pass_move(alice_client, alice_bob_game, db):
     db.session.commit()
 
 
-def test_three_player_game(alice_client, bob_client, carol_client,
+def test_three_player_game(client, alice_headers, bob_headers, carol_headers,
                            alice_bob_carol_game, db):
     """Test getting history for multiple moves in a three player game."""
     game, alice_game_player, bob_game_player, carol_game_player = \
@@ -235,8 +246,8 @@ def test_three_player_game(alice_client, bob_client, carol_client,
             'turn_number': 2
         }
     ]
-    for client in alice_client, bob_client, carol_client:
-        resp = client.get('/api/game/%s/move-history' % str(game.id))
+    for headers in alice_headers, bob_headers, carol_headers:
+        resp = client.get(f'/game/{game.id}/move-history', headers=headers)
         data = json.loads(resp.get_data())
         assert resp.status_code == 200
         assert len(data) == 1

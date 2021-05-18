@@ -2,7 +2,7 @@
 
 from slobsterble.apis.auth import AdminLoginView, AdminLogoutView, LoginView, RegisterView
 from slobsterble.apis.index import IndexView
-from slobsterble.apis.game import GameView
+from slobsterble.apis.game import GameView, MoveHistoryView
 
 
 __all__ = [
@@ -11,6 +11,7 @@ __all__ = [
     'GameView',
     'IndexView',
     'LoginView',
+    'MoveHistoryView',
     'RegisterView',
 ]
 

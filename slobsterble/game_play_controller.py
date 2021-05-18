@@ -4,7 +4,7 @@ from enum import Enum
 from random import Random
 
 from flask_login import current_user
-from jsonschema import validate as schema_validate
+from jsonschema import validate as schema_validate, ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
@@ -27,6 +27,7 @@ class Axis(Enum):
 
 TURN_PLAY_SCHEMA = {
     'type': 'array',
+    'minItems': 0,
     'maxItems': TILES_ON_RACK_MAX,
     'items': {
         'type': 'object',
@@ -95,8 +96,10 @@ class StatelessValidator:
 
     def validate(self):
         """Perform all validation that is independent of the game state."""
-        if not schema_validate(self.data, TURN_PLAY_SCHEMA):
-            raise slobsterble.play_exceptions.PlaySchemaException()
+        try:
+            schema_validate(self.data, TURN_PLAY_SCHEMA)
+        except ValidationError:
+            raise slobsterble.play_exceptions.PlaySchemaException
         valid = True
         valid &= self._validate_played_blanks()
         valid &= self._validate_exchanged_tiles()
@@ -653,13 +656,13 @@ def fetch_mapped_tile_counts(tile_counts_map, tile_object_map):
 def fetch_game_state(game_id):
     """Fetch all data, except dictionary lookups, needed for turn validation."""
     game_state = db.session.query(Game).filter(Game.id == game_id).options(
-        joinedload(Game.game_players).joinedload(GamePlayer.player)
-            .joinedload(Player.user).joinedload(GamePlayer.rack)
-            .joinedload(TileCount.tile),
+        joinedload(Game.game_players).options(
+            joinedload(GamePlayer.player).joinedload(Player.user),
+            joinedload(GamePlayer.rack).joinedload(TileCount.tile)),
         joinedload(Game.board_state).joinedload(PlayedTile.tile),
         joinedload(Game.bag_tiles).joinedload(TileCount.tile),
-        joinedload(Game.board_layout).joinedload(BoardLayout.modifiers)
-            .joinedload(PositionedModifier.modifier),
+        joinedload(Game.board_layout).joinedload(
+            BoardLayout.modifiers).joinedload(PositionedModifier.modifier),
     ).one()
     return game_state
 
