@@ -3,88 +3,37 @@ from collections import defaultdict, deque, namedtuple
 from enum import Enum
 from random import Random
 
-from flask_login import current_user
+from flask_jwt_extended import current_user
 from jsonschema import validate as schema_validate, ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
 
+import slobsterble.play_exceptions
 from slobsterble.app import db
 from slobsterble.constants import (
-    GAME_COLUMNS_MAX,
-    GAME_ROWS_MAX,
-    TILE_VALUE_MAX,
+    BINGO_BONUS,
     TILES_ON_RACK_MAX,
 )
-from slobsterble.models import Game, GamePlayer, Player, TileCount, PlayedTile, PositionedModifier, BoardLayout, Dictionary, Entry, Tile, Move
-import slobsterble.play_exceptions
+from slobsterble.game_play_schema import TURN_PLAY_SCHEMA
+from slobsterble.models import (
+    Game,
+    GamePlayer,
+    Player,
+    TileCount,
+    PlayedTile,
+    PositionedModifier,
+    BoardLayout,
+    Dictionary,
+    Entry,
+    Tile,
+    Move,
+)
 
 
 class Axis(Enum):
     ROW = 0
     COLUMN = 1
-
-
-TURN_PLAY_SCHEMA = {
-    'type': 'array',
-    'minItems': 0,
-    'maxItems': TILES_ON_RACK_MAX,
-    'items': {
-        'type': 'object',
-        'required': ['row', 'column', 'letter',
-                     'is_blank', 'is_exchange', 'value'],
-        'properties': {
-            'row': {
-                'oneOf': [
-                    {
-                        'type': 'integer',
-                        'minimum': 0,
-                        'maximum': GAME_ROWS_MAX,
-                    },
-                    {
-                        'type': 'null',
-                    },
-                ],
-            },
-            'column': {
-                'oneOf': [
-                    {
-                        'type': 'integer',
-                        'minimum': 0,
-                        'maximum': GAME_COLUMNS_MAX,
-                    },
-                    {
-                        'type': 'null',
-                    },
-                ],
-            },
-            'letter': {
-                'oneOf': [
-                    {
-                        'type': 'string',
-                        'maxLength': 1,
-                        'minLength': 1,
-                        'pattern': '[A-Z]',
-                    },
-                    {
-                        'type': 'null',
-                    },
-                ],
-            },
-            'is_blank': {
-                'type': 'boolean',
-            },
-            'is_exchange': {
-                'type': 'boolean',
-            },
-            'value': {
-                'type': 'integer',
-                'minimum': 0,
-                'maximum': TILE_VALUE_MAX,
-            }
-        }
-    }
-}
 
 
 class StatelessValidator:
@@ -100,34 +49,9 @@ class StatelessValidator:
             schema_validate(self.data, TURN_PLAY_SCHEMA)
         except ValidationError:
             raise slobsterble.play_exceptions.PlaySchemaException
-        valid = True
-        valid &= self._validate_played_blanks()
-        valid &= self._validate_exchanged_tiles()
-        valid &= self._validate_single_axis()
+        valid = self._validate_single_axis()
         self.validated = valid
         return valid
-
-    def _validate_played_blanks(self):
-        """Validate that all played tiles have a letter."""
-        for played_tile in self.data:
-            if not played_tile['is_exchange'] and played_tile['letter'] is None:
-                raise slobsterble.play_exceptions.PlayLetterlessException()
-        return True
-
-    def _validate_exchanged_tiles(self):
-        """Validate that any exchanged tiles are valid."""
-        exchanged_count = 0
-        for played_tile in self.data:
-            if played_tile['is_exchange']:
-                exchanged_count += 1
-                if ((played_tile['is_blank'] and played_tile[
-                    'letter'] is not None)
-                        or played_tile['row'] is not None
-                        or played_tile['column'] is not None):
-                    raise slobsterble.play_exceptions.PlayExchangeException()
-        if exchanged_count > 0 and exchanged_count != len(self.data):
-            raise slobsterble.play_exceptions.PlayExchangeException()
-        return True
 
     def _validate_single_axis(self):
         """Validate that all tiles are played along a single axis."""
@@ -162,9 +86,10 @@ class GameBoard:
     def __init__(self, game_query):
         self.rows = game_query.board_layout.rows
         self.columns = game_query.board_layout.columns
-        self.modifiers = [[GameBoardModifier(1, 1) for _ in self.columns]
-                          for _ in self.rows]
-        self.played_tiles = [[None for _ in self.columns] for _ in self.rows]
+        self.modifiers = [[GameBoardModifier(1, 1) for _ in range(self.columns)]
+                          for _ in range(self.rows)]
+        self.played_tiles = [[None for _ in range(self.columns)]
+                             for _ in range(self.rows)]
         for positioned_modifier in game_query.board_layout.modifiers:
             row = positioned_modifier.row
             column = positioned_modifier.column
@@ -187,7 +112,7 @@ class StatefulValidator:
 
     def __init__(self, data, game_state, game_player):
         self.data = data
-        self.game_id = game_state.state_id
+        self.game_id = game_state.id
         self.game_state = game_state
         self.game_board = GameBoard(self.game_state)
         self.game_player = game_player
@@ -214,7 +139,7 @@ class StatefulValidator:
     def _validate_rack_tiles(self):
         """The current player must have the attempted played tiles."""
         rack_tiles = defaultdict(int)
-        for tile_count in self.game_player.rack_tiles:
+        for tile_count in self.game_player.rack:
             tile = tile_count.tile
             tile_key = tile.letter, tile.value, tile.is_blank
             rack_tiles[tile_key] += tile_count.count
@@ -396,6 +321,8 @@ class WordBuilder:
         for played_tile in self.data:
             score_sum += self._score_axis(
                 played_tile['row'], played_tile['column'], secondary_axis)
+        if len(self.data) == TILES_ON_RACK_MAX:
+            score_sum += BINGO_BONUS
         return score_sum
 
     def _build_axis(self, start_row, start_column, axis):
@@ -486,12 +413,12 @@ class WordValidator:
 class StateUpdater:
     """Manager for updating the game state."""
 
-    def __init__(self, *, data, game_state, game_player, score, primary_word,
+    def __init__(self, *, data, game_state, game_player, turn_score, primary_word,
                  secondary_words, random_generator=None):
         self.data = data
         self.game_state = game_state
         self.game_player = game_player
-        self.score = score
+        self.turn_score = turn_score
         self.primary_word = primary_word
         self.secondary_words = secondary_words
         self.random_generator = random_generator or Random()
@@ -530,19 +457,27 @@ class StateUpdater:
         # Create the move object.
         move = Move(
             game_player_id=self.game_player.id, primary_word=self.primary_word,
-            secondary_words=self.secondary_words, rack_tiles=initial_rack,
-            exchanged_tiles=exchanged_tiles,
-            turn_number=self.game_state.turn_number, score=self.score,
+            secondary_words=','.join(self.secondary_words),
+            rack_tiles=initial_rack, exchanged_tiles=exchanged_tiles,
+            turn_number=self.game_state.turn_number, score=self.turn_score,
             played_time=played_time)
         db.session.add(move)
         # Update the game state.
         self.game_player.rack = next_rack
         self.game_state.bag_tiles = next_bag_tiles
-        self.game_player.score += self.score
+        self.game_player.score += self.turn_score
         self.game_state.board_state.extend(played_tiles)
         self.game_state.turn_number += 1
         if not self.game_player.rack and not self.game_state.bag_tiles:
             self.game_state.completed = played_time
+            remaining_sum = 0
+            for game_player in self.game_state.game_players:
+                player_rack_tile_sum = sum(
+                    tile_count.tile.value * tile_count.count
+                    for tile_count in game_player.rack)
+                game_player.score -= player_rack_tile_sum
+                remaining_sum += player_rack_tile_sum
+            self.game_player.score += remaining_sum
         db.session.commit()
 
     def _get_next_bag_and_rack(self):
@@ -564,8 +499,11 @@ class StateUpdater:
         for tile_key, count in next_bag_state.items():
             tile_keys.append(tile_key)
             counts.append(count)
-        drawn_tiles = self.random_generator.sample(
-            tile_keys, counts=counts, k=num_tiles_to_draw)
+        if num_tiles_to_draw > 0:
+            drawn_tiles = self.random_generator.sample(
+                tile_keys, counts=counts, k=num_tiles_to_draw)
+        else:
+            drawn_tiles = []
         for tile_key in drawn_tiles:
             next_bag_state[tile_key] -= 1
             next_rack_state[tile_key] += 1

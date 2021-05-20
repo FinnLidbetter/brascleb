@@ -17,7 +17,7 @@ from slobsterble.game_play_controller import (
     fetch_game_state,
     get_game_player,
 )
-from slobsterble.models import (GamePlayer, Move, TileCount, Player, User)
+from slobsterble.models import GamePlayer, Move, Player, TileCount, User
 
 
 class GameView(Resource):
@@ -57,7 +57,7 @@ class GameView(Resource):
                            'Modifier': ['letter_multiplier', 'word_multiplier']})
         current_game_player = None
         for game_player in game_state.game_players:
-            if game_player.player.user_id == g.user.id:
+            if game_player.player.user_id == current_user.id:
                 current_game_player = game_player
                 break
         serialized_user_rack = current_game_player.serialize(
@@ -82,14 +82,14 @@ class GameView(Resource):
             game_board = stateful_validator.game_board
             word_builder = WordBuilder(data, game_board)
             primary_word, secondary_words = word_builder.get_played_words()
-            score = word_builder.compute_score()
+            turn_score = word_builder.compute_score()
             if primary_word is not None:
                 word_validator = WordValidator([primary_word] + secondary_words,
                                                game_state.dictionary_id)
                 word_validator.validate()
             state_updater = StateUpdater(
                 data=data, game_state=game_state, game_player=game_player,
-                score=score, primary_word=primary_word,
+                turn_score=turn_score, primary_word=primary_word,
                 secondary_words=secondary_words)
             state_updater.update_state()
             return Response('Turn played successfully.', status=200)

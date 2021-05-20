@@ -165,7 +165,7 @@ class Move(db.Model, ModelMixin, ModelSerializer):
     game_player_id = db.Column(
         db.Integer, db.ForeignKey('game_player.id'), nullable=False)
     game_player = relationship(
-        'GamePlayer', backref=db.backref('moves'),
+        'GamePlayer', backref=db.backref('moves', cascade='all,delete'),
         doc='The player that played this move.')
     primary_word = db.Column(
         db.String(WORD_LENGTH_MAX), nullable=True,

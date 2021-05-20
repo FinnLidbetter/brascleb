@@ -23,16 +23,6 @@ class PlaySchemaException(BasePlayException):
     default_message = 'Turn play data does not conform to the schema.'
 
 
-class PlayLetterlessException(BasePlayException):
-    """Play data contains a blank played tile with no chosen letter."""
-    default_message = 'A blank tile was played with an undefined letter.'
-
-
-class PlayExchangeException(BasePlayException):
-    """Play data contains a mix of exchanged tiles and played tiles."""
-    default_message = 'Play data contains an invalid exchanged tile.'
-
-
 class PlayAxisException(BasePlayException):
     """Played tiles do not lie on a single axis."""
     default_message = 'Played tiles do not lie on a single axis.'

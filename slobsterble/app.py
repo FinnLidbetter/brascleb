@@ -2,7 +2,7 @@
 
 import os
 
-from flask import Flask
+from flask import Flask, Response
 from flask_admin import Admin
 from flask_migrate import Migrate
 from flask_restful import Api
@@ -109,6 +109,10 @@ def init_jwt(app):
     @jwt.user_identity_loader
     def user_identity_callback(user):
         return user.id
+
+    @jwt.unauthorized_loader
+    def unauthorized_access_callback(error_string):
+        return Response(error_string, status=401)
 
 
 def create_app():
