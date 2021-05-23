@@ -5,11 +5,10 @@ from random import Random
 
 from flask_jwt_extended import current_user
 from jsonschema import validate as schema_validate, ValidationError
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
 
-import slobsterble.play_exceptions
+import slobsterble.api_exceptions
 from slobsterble.app import db
 from slobsterble.constants import (
     BINGO_BONUS,
@@ -28,6 +27,13 @@ from slobsterble.models import (
     Entry,
     Tile,
     Move,
+)
+from slobsterble.utilities.db_utilities import fetch_or_create
+from slobsterble.utilities.tile_utilities import (
+    build_tile_count_map,
+    build_tile_object_map,
+    fetch_all_tiles,
+    fetch_mapped_tile_counts,
 )
 
 
@@ -48,7 +54,7 @@ class StatelessValidator:
         try:
             schema_validate(self.data, TURN_PLAY_SCHEMA)
         except ValidationError:
-            raise slobsterble.play_exceptions.PlaySchemaException
+            raise slobsterble.api_exceptions.PlaySchemaException
         valid = self._validate_single_axis()
         self.validated = valid
         return valid
@@ -66,13 +72,13 @@ class StatelessValidator:
             return True
         if len(row_set) == 1:
             if len(column_set) != len(self.data):
-                raise slobsterble.play_exceptions.PlayOverlapException()
+                raise slobsterble.api_exceptions.PlayOverlapException()
             return True
         if len(column_set) == 1:
             if len(row_set) != len(self.data):
-                raise slobsterble.play_exceptions.PlayOverlapException()
+                raise slobsterble.api_exceptions.PlayOverlapException()
             return True
-        raise slobsterble.play_exceptions.PlayAxisException()
+        raise slobsterble.api_exceptions.PlayAxisException()
 
 
 GameBoardModifier = namedtuple(
@@ -133,7 +139,7 @@ class StatefulValidator:
     def _validate_user_turn(self):
         """Validate that it is the user's turn and return the game player."""
         if self.game_player is None or self.game_player.player.user_id != current_user.id:
-            raise slobsterble.play_exceptions.PlayCurrentTurnException()
+            raise slobsterble.api_exceptions.PlayCurrentTurnException()
         return True
 
     def _validate_rack_tiles(self):
@@ -149,7 +155,7 @@ class StatefulValidator:
             tile_key = letter, played_tile['value'], played_tile['is_blank']
             rack_tiles[tile_key] -= 1
             if rack_tiles[tile_key] < 0:
-                raise slobsterble.play_exceptions.PlayRackTilesException()
+                raise slobsterble.api_exceptions.PlayRackTilesException()
         return True
 
     def _validate_first_turn(self):
@@ -169,7 +175,7 @@ class StatefulValidator:
                 if played_tile['row'] == centre_row \
                         and played_tile['column'] == centre_column:
                     return True
-            raise slobsterble.play_exceptions.PlayFirstTurnException()
+            raise slobsterble.api_exceptions.PlayFirstTurnException()
 
     def _validate_no_overlap(self):
         """The played tiles must not be in already occupied positions."""
@@ -178,7 +184,7 @@ class StatefulValidator:
                 row = played_tile['row']
                 column = played_tile['column']
                 if self.game_board.played_tiles[row][column] is not None:
-                    raise slobsterble.play_exceptions.PlayOverlapException()
+                    raise slobsterble.api_exceptions.PlayOverlapException()
         return True
 
     def _validate_connected(self):
@@ -206,7 +212,7 @@ class StatefulValidator:
                     continue
                 if self.game_board.played_tiles[adj_row][adj_column] is not None:
                     return True
-        raise slobsterble.play_exceptions.PlayConnectedException()
+        raise slobsterble.api_exceptions.PlayConnectedException()
 
     def _validate_contiguous(self):
         """
@@ -232,7 +238,7 @@ class StatefulValidator:
                     and self.data[data_index]['column'] == column:
                 data_index += 1
             elif self.game_board.played_tiles[row][column] is None:
-                raise slobsterble.play_exceptions.PlayContiguousException()
+                raise slobsterble.api_exceptions.PlayContiguousException()
             row += row_delta
             column += column_delta
         return True
@@ -406,7 +412,7 @@ class WordValidator:
             if not db.session.query(Dictionary).filter(
                     Dictionary.id == self.dictionary_id).join(
                     Dictionary.entries).filter(Entry.word == word).exists():
-                raise slobsterble.play_exceptions.PlayDictionaryException()
+                raise slobsterble.api_exceptions.PlayDictionaryException()
         return True
 
 
@@ -431,12 +437,12 @@ class StateUpdater:
         next_rack_state, next_bag_state = self._get_next_bag_and_rack()
         exchanged_state = self._get_exchanged()
         # Fetch and create required objects.
-        all_tiles = fetch_all_tiles()
+        all_tiles = fetch_all_tiles(db.session)
         tile_object_map = build_tile_object_map(all_tiles)
         tile_counts_union = next_rack_state | next_bag_state | \
             self.initial_rack_state | exchanged_state
         tile_count_object_map = fetch_mapped_tile_counts(
-            tile_counts_union, tile_object_map)
+            db.session, tile_counts_union, tile_object_map)
         played_tiles = self._fetch_played_tiles(tile_object_map)
 
         # Assemble the required TileCount objects for the Game, Move, and
@@ -537,10 +543,10 @@ class StateUpdater:
             column = datum['column']
             if tile_key not in tile_object_map:
                 tile_object_map[tile_key] = fetch_or_create(
-                    Tile, letter=tile_key[0], value=tile_key[1],
-                    is_blank=tile_key[2])
+                    db.session, Tile,
+                    letter=tile_key[0], value=tile_key[1], is_blank=tile_key[2])
             played_tile = fetch_or_create(
-                PlayedTile,
+                db.session, PlayedTile,
                 tile_id=tile_object_map[tile_key], row=row, column=column)
             played_tiles.append(played_tile)
         return played_tiles
@@ -553,42 +559,6 @@ def get_game_player(game_state):
         if game_state.turn_number % num_players == game_player.turn_order:
             return game_player
     return None
-
-
-def build_tile_object_map(tiles):
-    """Index Tile objects by tuples of their attributes."""
-    tile_object_map = {}
-    for tile in tiles:
-        tile_key = (tile.letter, tile.value, tile.is_blank)
-        tile_object_map[tile_key] = tile
-    return tile_object_map
-
-
-def build_tile_count_map(tile_counts):
-    """Build a map from a tile key to a count."""
-    tile_count_map = defaultdict(int)
-    for tile_count in tile_counts:
-        tile = tile_count.tile
-        tile_key = (tile.letter, tile.value, tile.is_blank)
-        tile_count_map[tile_key] = tile_count.count
-    return tile_count_map
-
-
-def fetch_mapped_tile_counts(tile_counts_map, tile_object_map):
-    """
-    Fetch tile count objects.
-
-    If the required TileCount or Tile objects do not exist, then those objects
-    will be created and committed to the database.
-    """
-    tile_counts_object_map = {}
-    for tile_key, count in tile_counts_map.items():
-        if tile_key not in tile_object_map:
-            tile_object_map[tile_key] = fetch_or_create(
-                Tile, letter=tile_key[0], value=tile_key[1], is_blank=tile_key[2])
-        tile_counts_object_map[(tile_key, count)] = fetch_or_create(
-            TileCount, tile_id=tile_object_map[tile_key].id, count=count)
-    return tile_counts_object_map
 
 
 def fetch_game_state(game_id):
@@ -605,22 +575,3 @@ def fetch_game_state(game_id):
     return game_state
 
 
-def fetch_all_tiles():
-    """Fetch all tiles."""
-    return db.session.query(Tile).all()
-
-
-def fetch_or_create(model, **kwargs):
-    """Fetch an instance of the model with the given parameters."""
-    instance = db.session.query(model).filter_by(**kwargs).one_or_none()
-    if instance:
-        return instance, False
-    instance = model(**kwargs)
-    try:
-        db.session.add(instance)
-        db.session.commit()
-    except SQLAlchemyError:
-        db.session.rollback()
-        instance = db.session.query(model).filter_by(**kwargs).one()
-        return instance, False
-    return instance, True

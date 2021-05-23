@@ -6,7 +6,7 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, current_user
 from sqlalchemy.orm import subqueryload, joinedload
 
-import slobsterble.play_exceptions
+import slobsterble.api_exceptions
 from slobsterble.app import db
 from slobsterble.game_play_controller import (
     StatelessValidator,
@@ -75,7 +75,10 @@ class GameView(Resource):
         try:
             stateless_validator = StatelessValidator(data)
             stateless_validator.validate()
-            game_state = fetch_game_state(game_id)
+            try:
+                game_state = fetch_game_state(game_id)
+            except sqlalchemy.orm.exc.NoResultFound:
+                return Response('Game does not exist.', status=400)
             game_player = get_game_player(game_state)
             stateful_validator = StatefulValidator(data, game_state, game_player)
             stateful_validator.validate()
@@ -93,10 +96,8 @@ class GameView(Resource):
                 secondary_words=secondary_words)
             state_updater.update_state()
             return Response('Turn played successfully.', status=200)
-        except slobsterble.play_exceptions.BasePlayException as play_error:
+        except slobsterble.api_exceptions.BaseApiException as play_error:
             return Response(str(play_error), status=play_error.status_code)
-        except sqlalchemy.orm.exc.NoResultFound:
-            return Response('Game does not exist.', status=400)
 
 
 class MoveHistoryView(Resource):

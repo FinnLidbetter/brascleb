@@ -1,6 +1,6 @@
 """Models related to games and players in those games."""
 
-from sqlalchemy import func, ForeignKeyConstraint, UniqueConstraint
+from sqlalchemy import func, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from slobsterble.app import db

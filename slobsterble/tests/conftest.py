@@ -41,10 +41,8 @@ def _build_user(name):
 
 def _build_player(user, db):
     default_dictionary = db.session.query(Dictionary).filter_by(id=1).first()
-    default_board_layout = db.session.query(BoardLayout).filter_by(
-        name='Classic').first()
-    default_distribution = db.session.query(Distribution).filter_by(
-        name='Classic').first()
+    default_board_layout = db.session.query(BoardLayout).filter_by(id=1).first()
+    default_distribution = db.session.query(Distribution).filter_by(id=1).first()
     player = Player(user=user, display_name=user.username,
                     dictionary=default_dictionary,
                     board_layout=default_board_layout,

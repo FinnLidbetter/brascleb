@@ -11,7 +11,7 @@ from flask_jwt_extended import JWTManager
 from werkzeug.security import generate_password_hash
 
 import slobsterble.settings
-from slobsterble.utilities import SlobsterbleModelView
+from slobsterble.apis import SlobsterbleModelView
 
 db = SQLAlchemy()
 admin = Admin()
@@ -21,6 +21,7 @@ jwt = JWTManager()
 
 
 def init_db(app):
+    """Initialize the database and create the admin user."""
     db.init_app(app)
     from slobsterble.models import User
     with app.app_context():
@@ -39,7 +40,7 @@ def init_db(app):
 
 def init_migrate(app):
     """
-    Initialise flask_migrate.
+    Initialize flask_migrate.
 
     This assumes that the database has been initialised already.
     """

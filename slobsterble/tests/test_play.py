@@ -1,10 +1,11 @@
 """Test the play turn API."""
 
-from slobsterble.play_exceptions import (
+from slobsterble.api_exceptions import (
     PlayCurrentTurnException,
     PlaySchemaException,
     PlayAxisException,
 )
+from slobsterble.models import Game, GamePlayer
 
 
 def test_game_does_not_exist(client, alice_headers):
@@ -32,6 +33,7 @@ def test_forbidden_user(client, bob_headers, carol_headers, alice_bob_game):
     assert resp.get_data(as_text=True) == PlayCurrentTurnException.default_message
 
 
+# TODO: The schema tests should be on the controller, not the view.
 def test_bad_schema(client, alice_headers, alice_bob_game):
     """A blank without a defined letter cannot be played."""
     game, _, __ = alice_bob_game
@@ -62,9 +64,18 @@ def test_bad_schema(client, alice_headers, alice_bob_game):
         assert resp.status_code == 400
         assert resp.get_data(as_text=True) == PlaySchemaException.default_message
 
-def test_pass(client, alice_headers, alice_bob_game):
+
+def test_pass(db, client, alice_headers, alice_bob_game):
     """Test playing a turn by submitting no data."""
-    game, _, __ = alice_bob_game
+    game, alice_game_player, __ = alice_bob_game
+    assert game.turn_number == 0
+    assert alice_game_player.score == 0
     resp = client.post(f'/game/{game.id}', json=[], headers=alice_headers)
     assert resp.status_code == 200
     assert resp.get_data(as_text=True) == 'Turn played successfully.'
+    game = db.session.query(Game).filter_by(id=game.id).one()
+    alice_game_player = db.session.query(GamePlayer).filter_by(
+        id=alice_game_player.id).one()
+    # Turn number increases.
+    assert game.turn_number == 1
+    assert alice_game_player.score == 0
