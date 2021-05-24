@@ -64,9 +64,10 @@ class GamePlayer(db.Model, ModelMixin, ModelSerializer):
     player_id = db.Column(db.Integer,
                           db.ForeignKey('player.id'),
                           nullable=False)
-    player = relationship('Player',
-                          backref=db.backref('game_players'),
-                          doc='The user for this game player.')
+    player = relationship(
+        'Player',
+        backref=db.backref('game_players', cascade='all,delete'),
+        doc='The player for this game player.')
     rack = db.relationship(
         'TileCount',
         secondary=rack,
@@ -136,7 +137,7 @@ class Game(db.Model, ModelMixin, ModelSerializer):
         GamePlayer,
         primaryjoin=id == GamePlayer.game_id,
         foreign_keys=GamePlayer.game_id,
-        backref="game")
+        backref=db.backref('game'))
 
     @property
     def whose_turn(self):

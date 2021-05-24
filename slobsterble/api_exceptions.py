@@ -33,6 +33,11 @@ class NewGameFriendException(BaseApiException):
     default_message = 'One or more of the given opponents is not your friend.'
 
 
+class NewGameActiveGamesException(BaseApiException):
+    """The user has too many active games to be allowed to start a new one."""
+    default_message = 'The user has too many active games to start a new one.'
+
+
 class PlaySchemaException(BaseApiException):
     """Turn play data does not conform to the schema."""
     default_message = 'Turn play data does not conform to the schema.'

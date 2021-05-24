@@ -9,7 +9,7 @@ from sqlalchemy.orm import subqueryload
 
 import slobsterble.api_exceptions
 from slobsterble.app import db
-from slobsterble.constants import TILES_ON_RACK_MAX, GAME_PLAYERS_MAX
+from slobsterble.constants import ACTIVE_GAME_LIMIT, TILES_ON_RACK_MAX, GAME_PLAYERS_MAX
 from slobsterble.models import Distribution, Game, GamePlayer, Player, TileCount
 from slobsterble.utilities.tile_utilities import build_tile_count_map, build_tile_object_map, fetch_all_tiles, fetch_mapped_tile_counts
 
@@ -70,6 +70,14 @@ class StatefulValidator:
             if friend_player_id not in friend_id_set:
                 raise slobsterble.api_exceptions.NewGameFriendException()
 
+    def _validate_active_game_limit(self):
+        """Validate that the user is not in too many active games already."""
+        active_games = db.session.query(GamePlayer).filter_by(
+            player_id=self.player.id).join(
+            GamePlayer.game).filter(Game.completed is None).count()
+        if active_games >= ACTIVE_GAME_LIMIT:
+            raise slobsterble.api_exceptions.NewGameActiveGamesException()
+
 
 class StateUpdater:
     """Create the Game and GamePlayers with initialized racks and bag."""
@@ -91,9 +99,9 @@ class StateUpdater:
         tiles_remaining = sum(bag_tile_count_map.values())
         for game_player in base_game_players:
             rack_tile_keys = random.sample(
-                bag_tile_count_map.keys(),
+                list(bag_tile_count_map.keys()),
                 k=min(TILES_ON_RACK_MAX, tiles_remaining),
-                counts=bag_tile_count_map.values())
+                counts=list(bag_tile_count_map.values()))
             rack_tile_count_map = defaultdict(int)
             for tile_key in rack_tile_keys:
                 rack_tile_count_map[tile_key] += 1
@@ -101,8 +109,9 @@ class StateUpdater:
                 db.session, rack_tile_count_map, tile_object_map)
             rack_tile_counts = list(mapped_rack_tile_counts.values())
             game_player.rack = rack_tile_counts
-            for tile_key, count in rack_tile_count_map:
+            for tile_key, count in rack_tile_count_map.items():
                 bag_tile_count_map[tile_key] -= count
+                tiles_remaining -= count
         mapped_bag_tile_counts = fetch_mapped_tile_counts(
             db.session, bag_tile_count_map, tile_object_map)
         base_game.bag_tiles = list(mapped_bag_tile_counts.values())
@@ -128,7 +137,7 @@ class StateUpdater:
         random.shuffle(shuffled_players)
         for turn_order_val, player in enumerate(shuffled_players):
             base_game_players.append(
-                GamePlayer(player_id=player.id, score=0,
+                GamePlayer(player=player, score=0,
                            turn_order=turn_order_val,
                            game=base_game))
         return base_game_players
@@ -137,7 +146,7 @@ class StateUpdater:
         """Fetch the player objects for the player ids in the data."""
         players = []
         for player_id in self.data:
-            players.append(db.session.query(Player).filter_by(id=player_id))
+            players.append(db.session.query(Player).filter_by(id=player_id).one())
         return players
 
 

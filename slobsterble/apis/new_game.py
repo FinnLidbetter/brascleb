@@ -22,7 +22,7 @@ class NewGameView(Resource):
     def get():
         current_player = db.session.query(Player).filter(
             Player.user_id == current_user.id).options(
-            subqueryload(Player.friends))
+            subqueryload(Player.friends)).one()
         data = {
             'friends': [
                 {
@@ -48,7 +48,7 @@ class NewGameView(Resource):
             stateful_validator.validate()
             state_updater = StateUpdater(data, player)
             state_updater.update_state()
-            return Response('New game started successfully.', status=200)
+            return Response('New game created successfully.', status=200)
         except BaseApiException as new_game_error:
             return Response(
                 str(new_game_error), status=new_game_error.status_code)

@@ -11,7 +11,6 @@ from flask_jwt_extended import JWTManager
 from werkzeug.security import generate_password_hash
 
 import slobsterble.settings
-from slobsterble.apis import SlobsterbleModelView
 
 db = SQLAlchemy()
 admin = Admin()
@@ -53,6 +52,7 @@ def init_migrate(app):
 def init_admin(app):
     """Initialise model views."""
     import slobsterble.models
+    from slobsterble.apis import SlobsterbleModelView
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.BoardLayout, db.session))
     admin.add_view(
@@ -87,14 +87,26 @@ def init_admin(app):
 
 
 def init_api(app):
-    from slobsterble.apis import AdminLoginView, LoginView, GameView, RegisterView, AdminLogoutView, IndexView, MoveHistoryView
+    from slobsterble.apis import (
+        AdminLoginView,
+        AdminLogoutView,
+        FriendsView,
+        GameView,
+        IndexView,
+        LoginView,
+        MoveHistoryView,
+        NewGameView,
+        RegisterView,
+    )
     api.add_resource(IndexView, '/', '/index')
     api.add_resource(AdminLoginView, '/admin-login')
     api.add_resource(AdminLogoutView, '/admin-logout')
     api.add_resource(RegisterView, '/register')
     api.add_resource(LoginView, '/login')
+    api.add_resource(NewGameView, '/new-game')
     api.add_resource(GameView, '/game/<int:game_id>')
     api.add_resource(MoveHistoryView, '/game/<int:game_id>/move-history')
+    api.add_resource(FriendsView, '/friends')
     api.init_app(app)
 
 

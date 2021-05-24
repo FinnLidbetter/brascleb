@@ -484,6 +484,22 @@ class StateUpdater:
                 game_player.score -= player_rack_tile_sum
                 remaining_sum += player_rack_tile_sum
             self.game_player.score += remaining_sum
+            best_score = 0
+            best_score_count = 0
+            for game_player in self.game_state.game_players:
+                if game_player.score == best_score:
+                    best_score_count += 1
+                elif game_player.score > best_score:
+                    best_score = game_player.score
+                    best_score_count = 1
+            for game_player in self.game_state.game_players:
+                if game_player.score == best_score:
+                    if best_score_count == 1:
+                        game_player.player.wins += 1
+                    else:
+                        game_player.player.ties += 1
+                else:
+                    game_player.player.losses += 1
         db.session.commit()
 
     def _get_next_bag_and_rack(self):
@@ -544,10 +560,10 @@ class StateUpdater:
             if tile_key not in tile_object_map:
                 tile_object_map[tile_key] = fetch_or_create(
                     db.session, Tile,
-                    letter=tile_key[0], value=tile_key[1], is_blank=tile_key[2])
+                    letter=tile_key[0], value=tile_key[1], is_blank=tile_key[2])[0]
             played_tile = fetch_or_create(
                 db.session, PlayedTile,
-                tile_id=tile_object_map[tile_key], row=row, column=column)
+                tile_id=tile_object_map[tile_key], row=row, column=column)[0]
             played_tiles.append(played_tile)
         return played_tiles
 
