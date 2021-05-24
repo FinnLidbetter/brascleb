@@ -71,12 +71,18 @@ class StatefulValidator:
                 raise slobsterble.api_exceptions.NewGameFriendException()
 
     def _validate_active_game_limit(self):
-        """Validate that the user is not in too many active games already."""
-        active_games = db.session.query(GamePlayer).filter_by(
-            player_id=self.player.id).join(
-            GamePlayer.game).filter(Game.completed is None).count()
-        if active_games >= ACTIVE_GAME_LIMIT:
-            raise slobsterble.api_exceptions.NewGameActiveGamesException()
+        """Validate that none of the players are in too many active games."""
+        player_ids = [self.player.id] + self.data
+        for player_id in player_ids:
+            active_games = db.session.query(GamePlayer).filter_by(
+                player_id=player_id).join(
+                GamePlayer.game).filter(Game.completed is None).count()
+            if active_games >= ACTIVE_GAME_LIMIT:
+                player = db.session.query(Player).filter_by(
+                    player_id=player_id).one()
+                raise slobsterble.api_exceptions.NewGameActiveGamesException(
+                    'User %d has too many active games to start a new one.'
+                    % player.display_name)
 
 
 class StateUpdater:

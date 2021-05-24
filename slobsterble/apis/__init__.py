@@ -8,8 +8,10 @@ from slobsterble.apis.auth import (
     RegisterView,
 )
 from slobsterble.apis.friends import FriendsView
-from slobsterble.apis.game import GameView, MoveHistoryView
+from slobsterble.apis.game import GameView
 from slobsterble.apis.index import IndexView
+from slobsterble.apis.list_games import ListGamesView
+from slobsterble.apis.move_history import MoveHistoryView
 from slobsterble.apis.new_game import NewGameView
 
 
@@ -19,6 +21,7 @@ __all__ = [
     'FriendsView',
     'GameView',
     'IndexView',
+    'ListGamesView',
     'LoginView',
     'MoveHistoryView',
     'NewGameView',

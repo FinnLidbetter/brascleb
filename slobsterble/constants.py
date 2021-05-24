@@ -1,6 +1,6 @@
 """Constants for the slobsterble game."""
 
-ACTIVE_GAME_LIMIT = 10
+ACTIVE_GAME_LIMIT = 20
 BINGO_BONUS = 50
 PLAYED_TILE_REQUIRED_FIELDS = [
     'row', 'column', 'letter', 'is_blank', 'is_exchange', 'value']

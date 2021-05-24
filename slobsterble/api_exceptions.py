@@ -34,7 +34,7 @@ class NewGameFriendException(BaseApiException):
 
 
 class NewGameActiveGamesException(BaseApiException):
-    """The user has too many active games to be allowed to start a new one."""
+    """A user has too many active games to be allowed to start a new one."""
     default_message = 'The user has too many active games to start a new one.'
 
 

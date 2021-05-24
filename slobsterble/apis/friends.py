@@ -19,7 +19,7 @@ ADD_FRIEND_SCHEMA = {
             'type': 'string',
             'minLength': FRIEND_KEY_LENGTH,
             'maxLength': FRIEND_KEY_LENGTH,
-            'pattern': '[' + FRIEND_KEY_CHARACTERS + ']',
+            'pattern': '[' + FRIEND_KEY_CHARACTERS + ']*',
         }
     }
 }
