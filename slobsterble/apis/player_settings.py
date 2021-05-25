@@ -49,7 +49,7 @@ PLAYER_SETTINGS_SCHEMA = {
 }
 
 
-class PlayerSettings(Resource):
+class PlayerSettingsView(Resource):
 
     @staticmethod
     @jwt_required()

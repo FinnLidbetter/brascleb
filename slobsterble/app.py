@@ -90,6 +90,7 @@ def init_api(app):
     from slobsterble.apis import (
         AdminLoginView,
         AdminLogoutView,
+        BoardLayoutView,
         FriendsView,
         GameView,
         IndexView,

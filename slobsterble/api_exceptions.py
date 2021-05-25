@@ -38,6 +38,11 @@ class NewGameActiveGamesException(BaseApiException):
     default_message = 'The user has too many active games to start a new one.'
 
 
+class NewGameLayoutDistributionException(BaseApiException):
+    default_message = 'The user\'s board layout is too small for the ' \
+                      'tile distribution.'
+
+
 class PlaySchemaException(BaseApiException):
     """Turn play data does not conform to the schema."""
     default_message = 'Turn play data does not conform to the schema.'

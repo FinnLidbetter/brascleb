@@ -4,7 +4,8 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from slobsterble.app import db
-from slobsterble.models.mixins import ModelMixin, ModelSerializer
+from slobsterble.models.mixins import MetadataMixin, ModelMixin, ModelSerializer
+from slobsterble.models.user import Player
 
 tile_distribution = db.Table('tile_distribution',
                              db.Column('distribution_id',
@@ -85,10 +86,27 @@ class PlayedTile(db.Model, ModelMixin, ModelSerializer):
         return '%s at (%d, %d)' % (str(self.tile), self.row, self.column)
 
 
-class Distribution(db.Model, ModelMixin, ModelSerializer):
+class Distribution(db.Model, MetadataMixin, ModelSerializer):
     """A distribution of tiles for a game."""
-    name = db.Column(db.String(256), nullable=False, unique=True,
+    __tablename__ = 'distribution'
+    __table_args__ = (
+        UniqueConstraint('creator_id', 'name'),
+    )
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True,
+                   doc='Integer ID for the model instance.')
+
+    name = db.Column(db.String(256), nullable=False,
                      doc='A descriptive name for an initial tile distribution.')
+    creator_id = db.Column(
+        db.Integer, db.ForeignKey('player.id', use_alter=True), nullable=True)
+    creator = db.relationship(
+        Player, primaryjoin=Player.id == creator_id, post_update=True,
+        doc='The player that created this distribution.')
+    players = db.relationship(
+        Player, backref='distribution', primaryjoin=id == Player.distribution_id)
 
     tile_distribution = db.relationship(
         TileCount,

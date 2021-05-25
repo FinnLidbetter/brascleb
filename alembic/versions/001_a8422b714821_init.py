@@ -1,9 +1,9 @@
 """
-Initalize models.
+Initialize database models.
 
-Revision ID: 694a04680af3
+Revision ID: a8422b714821
 Revises: 
-Create Date: 2021-05-16 16:26:53.724311
+Create Date: 2021-05-24 22:15:54.550883
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '694a04680af3'
+revision = 'a8422b714821'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,10 +24,12 @@ def upgrade():
     sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=256), nullable=False),
+    sa.Column('creator_id', sa.Integer(), nullable=True),
     sa.Column('rows', sa.Integer(), nullable=False),
     sa.Column('columns', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['creator_id'], ['player.id'], use_alter=True),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('name')
+    sa.UniqueConstraint('creator_id', 'name')
     )
     op.create_table('dictionary',
     sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
@@ -42,8 +44,10 @@ def upgrade():
     sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=256), nullable=False),
+    sa.Column('creator_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['creator_id'], ['player.id'], use_alter=True),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('name')
+    sa.UniqueConstraint('creator_id', 'name')
     )
     op.create_table('entry',
     sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),

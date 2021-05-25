@@ -79,7 +79,7 @@ def random_friend_key():
 
 class Player(db.Model, MetadataMixin, ModelSerializer):
     """Non-auth, non-game-specific information about users."""
-    __tablename__ = "player"
+    __tablename__ = 'player'
     serialize_exclude_fields = ['game_players', 'friends', 'dictionary']
 
     # For some reason, defining the self-referential friends
@@ -116,12 +116,12 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
     board_layout_id = db.Column(
         db.Integer, db.ForeignKey('board_layout.id'), nullable=False,
         doc='The player\'s preferred board layout.')
-    board_layout = relationship('BoardLayout')
+    # board_layout = relationship('BoardLayout', primaryjoin='board_layout_id==BoardLayout.id')
 
     distribution_id = db.Column(
         db.Integer, db.ForeignKey('distribution.id'), nullable=False,
         doc='The player\'s preferred tile distribution.')
-    distribution = relationship('Distribution')
+    # distribution = relationship('Distribution', primaryjoin='distribution_id==Distribution.id')
 
     def __str__(self):
         return self.display_name

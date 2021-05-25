@@ -9,9 +9,19 @@ from sqlalchemy.orm import subqueryload
 
 import slobsterble.api_exceptions
 from slobsterble.app import db
-from slobsterble.constants import ACTIVE_GAME_LIMIT, TILES_ON_RACK_MAX, GAME_PLAYERS_MAX
+from slobsterble.constants import (
+    ACTIVE_GAME_LIMIT,
+    TILES_ON_RACK_MAX,
+    GAME_PLAYERS_MAX,
+    SPACES_TILES_RATIO_MIN,
+)
 from slobsterble.models import Distribution, Game, GamePlayer, Player, TileCount
-from slobsterble.utilities.tile_utilities import build_tile_count_map, build_tile_object_map, fetch_all_tiles, fetch_mapped_tile_counts
+from slobsterble.utilities.tile_utilities import (
+    build_tile_count_map,
+    build_tile_object_map,
+    fetch_all_tiles,
+    fetch_mapped_tile_counts,
+)
 
 
 NEW_GAME_SCHEMA = {
@@ -69,6 +79,15 @@ class StatefulValidator:
         for friend_player_id in self.data:
             if friend_player_id not in friend_id_set:
                 raise slobsterble.api_exceptions.NewGameFriendException()
+
+    def _validate_layout_distribution(self):
+        """Validate that the player's tile distribution and layout are compatible."""
+        num_tiles = sum(tile_count.count for tile_count in
+                        self.player.distribution.tile_distribution)
+        rows = self.player.board_layout.rows
+        columns = self.player.board_layout.columns
+        if num_tiles * SPACES_TILES_RATIO_MIN > rows * columns:
+            raise slobsterble.api_exceptions.NewGameLayoutDistributionException()
 
     def _validate_active_game_limit(self):
         """Validate that none of the players are in too many active games."""

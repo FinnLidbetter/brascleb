@@ -40,7 +40,7 @@ def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
 
-    distribution = Distribution(name='Classic')
+    distribution = Distribution(name='Classic', creator_id=None)
     for tile_tuple, count in CLASSIC_DISTRIBUTION.items():
         letter = tile_tuple[0]
         value = tile_tuple[1]
@@ -81,7 +81,7 @@ def upgrade():
                 session.add(modifier)
     session.commit()
     board_layout = BoardLayout(
-        name='Classic', rows=classic_rows, columns=classic_columns)
+        name='Classic', creator_id=None, rows=classic_rows, columns=classic_columns)
     for row_index in range(classic_rows):
         for column_index in range(classic_columns):
             letter_multiplier = CLASSIC_LETTER_MULTIPLIERS[

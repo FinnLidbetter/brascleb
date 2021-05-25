@@ -2,7 +2,8 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, validates
 
 from slobsterble.app import db
-from slobsterble.models.mixins import ModelMixin, ModelSerializer
+from slobsterble.models.mixins import MetadataMixin, ModelMixin, ModelSerializer
+from slobsterble.models.user import Player
 
 
 modifiers = db.Table('modifiers',
@@ -62,10 +63,27 @@ class PositionedModifier(db.Model, ModelMixin, ModelSerializer):
         return '%s at (%d, %d)' % (str(self.modifier), self.row, self.column)
 
 
-class BoardLayout(db.Model, ModelMixin, ModelSerializer):
+class BoardLayout(db.Model, MetadataMixin, ModelSerializer):
     """A description for an empty board."""
-    name = db.Column(db.String(256), nullable=False, unique=True,
+    __tablename__ = 'board_layout'
+    __table_args__ = (
+        UniqueConstraint('creator_id', 'name'),
+    )
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True,
+                   doc='Integer ID for the model instance.')
+
+    name = db.Column(db.String(256), nullable=False,
                      doc='A descriptive name for the board layout.')
+    creator_id = db.Column(
+        db.Integer, db.ForeignKey('player.id', use_alter=True), nullable=True)
+    creator = db.relationship(
+        Player, primaryjoin=Player.id == creator_id, post_update=True,
+        doc='The player that created this distribution.')
+    players = db.relationship(
+        Player, backref='board_layout', primaryjoin=id == Player.board_layout_id)
 
     rows = db.Column(
         db.Integer,

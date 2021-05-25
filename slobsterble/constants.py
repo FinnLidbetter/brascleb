@@ -4,7 +4,9 @@ ACTIVE_GAME_LIMIT = 20
 BINGO_BONUS = 50
 PLAYED_TILE_REQUIRED_FIELDS = [
     'row', 'column', 'letter', 'is_blank', 'is_exchange', 'value']
+GAME_ROWS_MIN = 11
 GAME_ROWS_MAX = 21
+GAME_COLUMNS_MIN = 11
 GAME_COLUMNS_MAX = 21
 TILES_ON_RACK_MAX = 7
 WORD_LENGTH_MAX = 21
@@ -53,8 +55,12 @@ CLASSIC_DISTRIBUTION = {
     ('U', 1): 4, ('V', 4): 2, ('W', 4): 2, ('X', 8): 1, ('Y', 4): 2,
     ('Z', 10): 1, (None, 0): 2}
 
-TILE_VALUE_MAX = max(CLASSIC_DISTRIBUTION.keys(),
-                     key=lambda tile_count: tile_count[1])[1]
+MULTIPLIER_MIN = 1
+MULTIPLIER_MAX = 4
+
+TILE_VALUE_MAX = 10
+TILE_COUNT_MAX = 25
+SPACES_TILES_RATIO_MIN = 2
 
 DISPLAY_NAME_LENGTH_MAX = 15
 FRIEND_KEY_CHARACTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'

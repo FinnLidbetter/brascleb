@@ -3,7 +3,7 @@
 from flask import jsonify, request, Response
 from flask_jwt_extended import jwt_required, current_user
 from flask_restful import Resource
-from sqlalchemy.orm import subqueryload
+from sqlalchemy.orm import joinedload, subqueryload
 
 from slobsterble.app import db
 from slobsterble.game_setup_controller import (
@@ -11,7 +11,7 @@ from slobsterble.game_setup_controller import (
     StatefulValidator,
     StateUpdater,
 )
-from slobsterble.models import Player
+from slobsterble.models import Distribution, Player
 from slobsterble.api_exceptions import BaseApiException
 
 
@@ -43,7 +43,12 @@ class NewGameView(Resource):
             stateless_validator.validate()
             player = db.session.query(Player).filter_by(
                 user_id=current_user.id
-            ).options(subqueryload(Player.friends)).one()
+            ).options(
+                subqueryload(Player.friends),
+                joinedload(Player.distribution).subqueryload(
+                    Distribution.tile_distribution),
+                joinedload(Player.board_layout)
+            ).one()
             stateful_validator = StatefulValidator(data, player)
             stateful_validator.validate()
             state_updater = StateUpdater(data, player)
