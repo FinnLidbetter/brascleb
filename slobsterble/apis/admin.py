@@ -6,8 +6,7 @@ from flask import (
     url_for
 )
 from flask_admin.contrib.sqla import ModelView
-from flask_jwt_extended import verify_jwt_in_request, current_user
-from flask_jwt_extended.exceptions import NoAuthorizationError
+from flask_login import current_user as session_current_user
 
 
 class SlobsterbleModelView(ModelView):
@@ -16,13 +15,7 @@ class SlobsterbleModelView(ModelView):
 
     def is_accessible(self):
         """Return true iff the requesting user may access the admin view."""
-        try:
-            verify_jwt_in_request(fresh=True)
-            if not current_user.activated:
-                return False
-        except NoAuthorizationError:
-            return False
-        return True
+        return session_current_user.is_authenticated and session_current_user.activated
 
     def inaccessible_callback(self, name, **kwargs):
         """Redirect to login page if the user is not authorized."""

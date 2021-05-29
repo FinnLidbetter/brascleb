@@ -1,5 +1,6 @@
 """Handler for user authentication."""
 
+import flask_login
 from flask import (
     Response,
     flash,
@@ -14,12 +15,11 @@ from flask_jwt_extended import (
     create_refresh_token,
     get_jwt_identity,
     jwt_required,
-    set_access_cookies,
-    unset_jwt_cookies,
 )
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash
 
+from slobsterble.app import db
 from slobsterble.models import (
     BoardLayout,
     Dictionary,
@@ -27,7 +27,7 @@ from slobsterble.models import (
     Player,
     User,
 )
-from slobsterble.forms import LoginForm
+from slobsterble.forms import LoginForm, RegisterForm
 
 
 class TokenRefreshView(Resource):
@@ -73,8 +73,7 @@ class AdminLoginView(Resource):
                 flash('Invalid username or password')
                 return redirect(url_for('auth.admin_login'))
             response = redirect(url_for('admin.index'))
-            access_token = create_access_token(identity=user)
-            set_access_cookies(response, access_token)
+            flask_login.login_user(user)
             return response
         return Response(
             render_template('auth/admin-login.html', title='Sign In',
@@ -85,9 +84,51 @@ class AdminLogoutView(Resource):
 
     @staticmethod
     def get():
-        response = jsonify({'msg': 'logout successful'})
-        unset_jwt_cookies(response)
-        return response
+        flask_login.logout_user()
+        return redirect(url_for('adminloginview'))
+
+
+class WebsiteRegisterView(Resource):
+
+    @staticmethod
+    def get():
+        form = RegisterForm()
+        return Response(render_template('auth/register.html', title='Register', form=form), status=200)
+
+    @staticmethod
+    def post():
+        form = RegisterForm()
+        if form.validate_on_submit():
+            existing_user = User.query.filter_by(
+                username=form.username.data).first()
+            if existing_user:
+                flash('User with this username already exists.')
+                return Response(
+                    render_template('auth/register.html', title='Register',
+                                    form=form), status=200)
+            if form.password.data != form.confirm_password.data:
+                flash('Passwords do not match.')
+                return Response(
+                    render_template('auth/register.html', title='Register',
+                                    form=form), status=200)
+            new_user = User(username=form.username.data,
+                            password_hash=generate_password_hash(form.password.data))
+            db.session.add(new_user)
+            default_dictionary = db.session.query(Dictionary).filter_by(
+                id=2).first()
+            default_board_layout = db.session.query(BoardLayout).filter_by(
+                name='Classic').first()
+            default_distribution = db.session.query(Distribution).filter_by(
+                name='Classic').first()
+            new_player = Player(user=new_user, display_name=form.display_name.data,
+                                dictionary=default_dictionary,
+                                board_layout=default_board_layout,
+                                distribution=default_distribution)
+            db.session.add(new_player)
+            db.session.commit()
+            return redirect(url_for('indexview'))
+        flash('Invalid form submission')
+        return Response(render_template('auth/register.html', title='Register', form=form), status=200)
 
 
 class RegisterView(Resource):

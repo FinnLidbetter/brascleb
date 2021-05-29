@@ -6,6 +6,7 @@ from slobsterble.apis.auth import (
     AdminLogoutView,
     LoginView,
     RegisterView,
+    WebsiteRegisterView,
 )
 from slobsterble.apis.board_layout import BoardLayoutView
 from slobsterble.apis.friends import FriendsView
@@ -15,11 +16,13 @@ from slobsterble.apis.list_games import ListGamesView
 from slobsterble.apis.move_history import MoveHistoryView
 from slobsterble.apis.new_game import NewGameView
 from slobsterble.apis.player_settings import PlayerSettingsView
+from slobsterble.apis.tile_distribution import TileDistributionView
 
 
 __all__ = [
     'AdminLoginView',
     'AdminLogoutView',
+    'WebsiteRegisterView',
     'BoardLayoutView',
     'FriendsView',
     'GameView',
@@ -31,5 +34,6 @@ __all__ = [
     'PlayerSettingsView',
     'RegisterView',
     'SlobsterbleModelView',
+    'TileDistributionView',
 ]
 

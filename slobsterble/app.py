@@ -4,6 +4,7 @@ import os
 
 from flask import Flask, Response
 from flask_admin import Admin
+from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
@@ -14,6 +15,7 @@ import slobsterble.settings
 
 db = SQLAlchemy()
 admin = Admin()
+login_manager = LoginManager()
 migrate = Migrate()
 api = Api()
 jwt = JWTManager()
@@ -99,12 +101,17 @@ def init_api(app):
         MoveHistoryView,
         NewGameView,
         RegisterView,
+        TileDistributionView,
+        WebsiteRegisterView,
     )
     api.add_resource(IndexView, '/', '/index')
     api.add_resource(AdminLoginView, '/admin-login')
     api.add_resource(AdminLogoutView, '/admin-logout')
+    api.add_resource(WebsiteRegisterView, '/site-register')
     api.add_resource(RegisterView, '/register')
     api.add_resource(LoginView, '/login')
+    api.add_resource(BoardLayoutView, '/board-layout')
+    api.add_resource(TileDistributionView, '/tile-distribution')
     api.add_resource(NewGameView, '/new-game')
     api.add_resource(ListGamesView, '/games')
     api.add_resource(GameView, '/game/<int:game_id>')
@@ -131,6 +138,16 @@ def init_jwt(app):
         return Response(error_string, status=401)
 
 
+def init_login(app):
+    """Initialize the login manager for session-based authentication."""
+    from slobsterble.models import User
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def user_loader(user_id):
+        return User.query.get(int(user_id))
+
+
 def create_app():
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
@@ -139,6 +156,7 @@ def create_app():
     init_db(app)
     init_migrate(app)
     init_jwt(app)
+    init_login(app)
     init_api(app)
     init_admin(app)
 
