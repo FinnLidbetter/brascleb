@@ -50,10 +50,15 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
     # circular serialization.
     serialize_exclude_fields = ['password_hash', 'player']
 
-    activated = db.Column(db.Boolean(), nullable=False, default=False)
+    activated = db.Column(db.Boolean, nullable=False, default=False)
     username = db.Column(db.String(255, collation='NOCASE'),
                          unique=True,
                          nullable=False)
+    refresh_token_iat = db.Column(
+        db.Integer, nullable=True, default=None,
+        doc='Initialization timestamp of the user\'s most recent refresh '
+            'token. Contains None if the user has manually logged out or has '
+            'never logged in.')
     password_hash = db.Column(db.String(255), nullable=False)
     roles = db.relationship('Role', secondary=user_roles)
 

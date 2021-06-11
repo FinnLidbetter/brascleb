@@ -27,7 +27,7 @@ def test_no_authorization(client, alice_bob_game):
     game, _, __ = alice_bob_game
     resp = client.get(f'/game/{game.id}/move-history')
     assert resp.status_code == 401
-    assert "Missing JWT in headers or cookies" in resp.get_data(as_text=True)
+    assert "Missing Authorization Header" in resp.get_data(as_text=True)
 
 
 def test_no_moves(client, alice_headers, alice_bob_game):

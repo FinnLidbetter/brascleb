@@ -1,5 +1,7 @@
 """Handler for user authentication."""
 
+import datetime
+
 import flask_login
 from flask import (
     Response,
@@ -13,9 +15,13 @@ from flask import (
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
+    current_user,
+    decode_token,
     get_jwt_identity,
     jwt_required,
+    get_jwt,
 )
+from flask_jwt_extended.config import config as jwt_config
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash
 
@@ -35,9 +41,21 @@ class TokenRefreshView(Resource):
     @staticmethod
     @jwt_required(refresh=True)
     def post():
+        """Get a new access token if the refresh token is still valid."""
+        jwt = get_jwt()
+        refresh_token_iat = jwt.get('iat', 0)
+        if current_user.refresh_token_iat != refresh_token_iat:
+            # The refresh token has been invalidated by a user logout.
+            return Response(status=401)
         identity = get_jwt_identity()
+        now = datetime.datetime.now(datetime.timezone.utc)
         access_token = create_access_token(identity=identity, fresh=False)
-        return jsonify(access_token=access_token)
+        access_expiration_date = now + jwt_config.access_expires
+        data = {
+            'token': access_token,
+            'expiration_date': access_expiration_date
+        }
+        return jsonify(data)
 
 
 class LoginView(Resource):
@@ -51,9 +69,36 @@ class LoginView(Resource):
         if not user or not user.check_password(password):
             return Response('Incorrect username or password', status=401)
 
+        now = datetime.datetime.now(datetime.timezone.utc)
         access_token = create_access_token(identity=user, fresh=True)
+        access_expiration_date = now + jwt_config.access_expires
         refresh_token = create_refresh_token(identity=user)
-        return jsonify(access_token=access_token, refresh_token=refresh_token)
+        refresh_iat = decode_token(refresh_token).get('iat', 0)
+        user.refresh_token_iat = refresh_iat
+        refresh_expiration_date = now + jwt_config.refresh_expires
+        data = {
+            'access_token': {
+                'certificate': access_token,
+                'expiration_date': access_expiration_date.timestamp(),
+            },
+            'refresh_token': {
+                'certificate': refresh_token,
+                'expiration_date': refresh_expiration_date.timestamp(),
+            }
+        }
+        db.session.commit()
+        return jsonify(data)
+
+
+class LogoutView(Resource):
+
+    @staticmethod
+    @jwt_required()
+    def post():
+        """Log the user out."""
+        current_user.token_iat = None
+        db.session.commit()
+        return Response("Success")
 
 
 class AdminLoginView(Resource):

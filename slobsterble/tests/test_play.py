@@ -28,7 +28,7 @@ def test_game_no_authorization(client):
     """Test submitting a play without a JWT."""
     resp = client.post('/game/1', json=[])
     assert resp.status_code == 401
-    assert "Missing JWT in headers or cookies" in resp.get_data(as_text=True)
+    assert "Missing Authorization Header" in resp.get_data(as_text=True)
 
 
 def test_forbidden_user(alice_bob_game, alice, bob, carol):

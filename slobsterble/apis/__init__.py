@@ -5,7 +5,9 @@ from slobsterble.apis.auth import (
     AdminLoginView,
     AdminLogoutView,
     LoginView,
+    LogoutView,
     RegisterView,
+    TokenRefreshView,
     WebsiteRegisterView,
 )
 from slobsterble.apis.board_layout import BoardLayoutView
@@ -29,11 +31,13 @@ __all__ = [
     'IndexView',
     'ListGamesView',
     'LoginView',
+    'LogoutView',
     'MoveHistoryView',
     'NewGameView',
     'PlayerSettingsView',
     'RegisterView',
     'SlobsterbleModelView',
     'TileDistributionView',
+    'TokenRefreshView',
 ]
 

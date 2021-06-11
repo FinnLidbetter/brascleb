@@ -102,6 +102,7 @@ def upgrade():
     sa.Column('activated', sa.Boolean(), nullable=False),
     sa.Column('username', sa.String(length=255, collation='NOCASE'), nullable=False),
     sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('refresh_token_iat', sa.Integer(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('username')
     )
@@ -157,7 +158,7 @@ def upgrade():
     sa.Column('highest_individual_score', sa.Integer(), nullable=False),
     sa.Column('highest_combined_score', sa.Integer(), nullable=False),
     sa.Column('best_word_score', sa.Integer(), nullable=False),
-    sa.Column('friend_key', sa.String(length=15), nullable=False),
+    sa.Column('friend_key', sa.String(length=7), nullable=False),
     sa.Column('dictionary_id', sa.Integer(), nullable=False),
     sa.Column('board_layout_id', sa.Integer(), nullable=False),
     sa.Column('distribution_id', sa.Integer(), nullable=False),

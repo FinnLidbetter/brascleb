@@ -23,10 +23,10 @@ def test_game_no_authorization(client):
     """Test trying to start a new game without a JWT."""
     resp = client.get('/new-game')
     assert resp.status_code == 401
-    assert "Missing JWT in headers or cookies" in resp.get_data(as_text=True)
+    assert "Missing Authorization Header" in resp.get_data(as_text=True)
     resp = client.post('/new-game', json=[2])
     assert resp.status_code == 401
-    assert "Missing JWT in headers or cookies" in resp.get_data(as_text=True)
+    assert "Missing Authorization Header" in resp.get_data(as_text=True)
 
 
 def test_stateless_validation():

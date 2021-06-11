@@ -98,18 +98,22 @@ def init_api(app):
         IndexView,
         ListGamesView,
         LoginView,
+        LogoutView,
         MoveHistoryView,
         NewGameView,
         RegisterView,
         TileDistributionView,
+        TokenRefreshView,
         WebsiteRegisterView,
     )
     api.add_resource(IndexView, '/', '/index')
     api.add_resource(AdminLoginView, '/admin-login')
     api.add_resource(AdminLogoutView, '/admin-logout')
+    api.add_resource(TokenRefreshView, '/refresh-access')
     api.add_resource(WebsiteRegisterView, '/site-register')
     api.add_resource(RegisterView, '/register')
     api.add_resource(LoginView, '/login')
+    api.add_resource(LogoutView, '/logout')
     api.add_resource(BoardLayoutView, '/board-layout')
     api.add_resource(TileDistributionView, '/tile-distribution')
     api.add_resource(NewGameView, '/new-game')
