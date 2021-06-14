@@ -21,10 +21,10 @@ from slobsterble.models import Game, GamePlayer, TileCount
 
 def test_game_no_authorization(client):
     """Test trying to start a new game without a JWT."""
-    resp = client.get('/new-game')
+    resp = client.get('/api/new-game')
     assert resp.status_code == 401
     assert "Missing Authorization Header" in resp.get_data(as_text=True)
-    resp = client.post('/new-game', json=[2])
+    resp = client.post('/api/new-game', json=[2])
     assert resp.status_code == 401
     assert "Missing Authorization Header" in resp.get_data(as_text=True)
 
@@ -115,7 +115,7 @@ def test_valid_gets(client, alice_bob_mutual_friends, alice_carol_friend,
     """Test getting data for starting a new game."""
     _, bob_player = alice_bob_mutual_friends
     alice_player, carol_player = alice_carol_friend
-    alice_resp = client.get('/new-game', headers=alice_headers)
+    alice_resp = client.get('/api/new-game', headers=alice_headers)
     alice_data = json.loads(alice_resp.get_data(as_text=True))
     alice_data['friends'].sort(key=lambda dct: dct['display_name'])
     assert alice_data == {
@@ -124,11 +124,11 @@ def test_valid_gets(client, alice_bob_mutual_friends, alice_carol_friend,
              'player_id': bob_player.id},
             {'display_name': carol_player.display_name,
              'player_id': carol_player.id}]}
-    bob_resp = client.get('/new-game', headers=bob_headers)
+    bob_resp = client.get('/api/new-game', headers=bob_headers)
     bob_data = json.loads(bob_resp.get_data(as_text=True))
     assert bob_data == {'friends': [{'display_name': alice_player.display_name,
                                      'player_id': alice_player.id}]}
-    carol_resp = client.get('/new-game', headers=carol_headers)
+    carol_resp = client.get('/api/new-game', headers=carol_headers)
     carol_data = json.loads(carol_resp.get_data(as_text=True))
     assert carol_data == {'friends': []}
 
@@ -136,7 +136,7 @@ def test_valid_gets(client, alice_bob_mutual_friends, alice_carol_friend,
 def test_valid_post(client, db, alice_bob_mutual_friends, alice_headers):
     """Test submitting a valid POST to the New Game API."""
     alice_player, bob_player = alice_bob_mutual_friends
-    resp = client.post('/new-game', json=[bob_player.id], headers=alice_headers)
+    resp = client.post('/api/new-game', json=[bob_player.id], headers=alice_headers)
     assert resp.status_code == 200
     assert resp.get_data(as_text=True) == 'New game created successfully.'
     # Cleanup by deleting the game that we just created.
@@ -148,6 +148,6 @@ def test_valid_post(client, db, alice_bob_mutual_friends, alice_headers):
 def test_invalid_post(client, bob, alice_headers):
     """Test submitting an invalid POST to the New Game API."""
     _, bob_player = bob
-    resp = client.post('/new-game', json=[bob_player.id], headers=alice_headers)
+    resp = client.post('/api/new-game', json=[bob_player.id], headers=alice_headers)
     assert resp.status_code == 400
     assert resp.get_data(as_text=True) == NewGameFriendException.default_message

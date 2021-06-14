@@ -3,7 +3,7 @@
 from flask import jsonify
 from flask_jwt_extended import jwt_required, current_user
 from flask_restful import Resource
-from sqlalchemy import nullsfirst
+from sqlalchemy import case
 
 from slobsterble.app import db
 from slobsterble.constants import ACTIVE_GAME_LIMIT
@@ -23,11 +23,21 @@ class ListGamesView(Resource):
         started (more recent, first) second.
         """
         user_games = db.session.query(Game).join(
-            Game.game_players).join(
-            GamePlayer.player).filter(
-            Player.user_id == current_user.id).order_by(
-            nullsfirst(Game.completed.desc()), Game.started.desc()).limit(
-            ACTIVE_GAME_LIMIT).all()
+            Game.game_players
+        ).join(
+            GamePlayer.player
+        ).filter(
+            Player.user_id == current_user.id
+        ).order_by(
+            case(
+                [(Game.completed.is_(None), 1)],
+                else_=0
+            ),
+            Game.completed.desc(),
+            Game.started.desc()
+        ).limit(
+            ACTIVE_GAME_LIMIT
+        ).all()
 
         def _game_player_sort(game_player):
             return game_player['turn_order']

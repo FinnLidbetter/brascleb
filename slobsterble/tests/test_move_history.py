@@ -8,7 +8,7 @@ import slobsterble.models
 
 def test_game_does_not_exist(client, alice_headers):
     """Test game not found returns 400."""
-    resp = client.get('/game/1/move-history', headers=alice_headers)
+    resp = client.get('/api/game/1/move-history', headers=alice_headers)
     assert resp.status_code == 400
     assert resp.get_data(as_text=True) == 'No game with ID 1.'
 
@@ -16,7 +16,7 @@ def test_game_does_not_exist(client, alice_headers):
 def test_unauthorized_user(client, carol_headers, alice_bob_game):
     """A user that is not a player in the game cannot see the move history."""
     game, _, __ = alice_bob_game
-    resp = client.get(f'/game/{game.id}/move-history',
+    resp = client.get(f'/api/game/{game.id}/move-history',
                       headers=carol_headers)
     assert resp.status_code == 401
     assert resp.get_data(as_text=True) == 'User is not authorized.'
@@ -25,7 +25,7 @@ def test_unauthorized_user(client, carol_headers, alice_bob_game):
 def test_no_authorization(client, alice_bob_game):
     """The API returns no result if there is no authorization."""
     game, _, __ = alice_bob_game
-    resp = client.get(f'/game/{game.id}/move-history')
+    resp = client.get(f'/api/game/{game.id}/move-history')
     assert resp.status_code == 401
     assert "Missing Authorization Header" in resp.get_data(as_text=True)
 
@@ -33,7 +33,7 @@ def test_no_authorization(client, alice_bob_game):
 def test_no_moves(client, alice_headers, alice_bob_game):
     """Test getting the move history when there have been no moves yet."""
     game, _, __ = alice_bob_game
-    resp = client.get(f'/game/{game.id}/move-history',
+    resp = client.get(f'/api/game/{game.id}/move-history',
                       headers=alice_headers)
     assert resp.status_code == 200
     data = json.loads(resp.get_data())
@@ -54,7 +54,7 @@ def test_one_regular_move(client, alice_headers, bob_headers, alice_bob_game, db
     db.session.commit()
     # Results are the same for both players.
     for headers in alice_headers, bob_headers:
-        resp = client.get(f'/game/{game.id}/move-history', headers=headers)
+        resp = client.get(f'/api/game/{game.id}/move-history', headers=headers)
         data = json.loads(resp.get_data())
         assert resp.status_code == 200
         assert len(data['game_players']) == 2
@@ -97,7 +97,7 @@ def test_exchange(client, alice_headers, alice_bob_game, db):
         played_time=datetime.datetime.now())
     db.session.add(move)
     db.session.commit()
-    resp = client.get(f'/game/{game.id}/move-history', headers=alice_headers)
+    resp = client.get(f'/api/game/{game.id}/move-history', headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
     assert len(data['game_players']) == 2
@@ -160,7 +160,7 @@ def test_pass_move(client, alice_headers, alice_bob_game, db):
         played_time=datetime.datetime.now())
     db.session.add(move)
     db.session.commit()
-    resp = client.get(f'/game/{game.id}/move-history', headers=alice_headers)
+    resp = client.get(f'/api/game/{game.id}/move-history', headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
     assert len(data['game_players']) == 2
@@ -246,7 +246,7 @@ def test_three_player_game(client, alice_headers, bob_headers, carol_headers,
         }
     ]
     for headers in alice_headers, bob_headers, carol_headers:
-        resp = client.get(f'/game/{game.id}/move-history', headers=headers)
+        resp = client.get(f'/api/game/{game.id}/move-history', headers=headers)
         data = json.loads(resp.get_data())
         assert resp.status_code == 200
         assert len(data) == 1

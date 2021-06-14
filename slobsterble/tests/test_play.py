@@ -19,14 +19,14 @@ from slobsterble.models import Game, GamePlayer
 def test_game_does_not_exist(client, alice_headers):
     """Test submitting a play to a game that does not exist."""
     game_id = 1
-    resp = client.post(f'/game/{game_id}', json=[], headers=alice_headers)
+    resp = client.post(f'/api/game/{game_id}', json=[], headers=alice_headers)
     assert resp.status_code == 400
     assert resp.get_data(as_text=True) == 'Game does not exist.'
 
 
 def test_game_no_authorization(client):
     """Test submitting a play without a JWT."""
-    resp = client.post('/game/1', json=[])
+    resp = client.post('/api/game/1', json=[])
     assert resp.status_code == 401
     assert "Missing Authorization Header" in resp.get_data(as_text=True)
 
@@ -91,7 +91,7 @@ def test_pass(db, client, alice_headers, alice_bob_game):
     game, alice_game_player, __ = alice_bob_game
     assert game.turn_number == 0
     assert alice_game_player.score == 0
-    resp = client.post(f'/game/{game.id}', json=[], headers=alice_headers)
+    resp = client.post(f'/api/game/{game.id}', json=[], headers=alice_headers)
     assert resp.status_code == 200
     assert resp.get_data(as_text=True) == 'Turn played successfully.'
     game = db.session.query(Game).filter_by(id=game.id).one()

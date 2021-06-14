@@ -47,9 +47,8 @@ class TokenRefreshView(Resource):
         if current_user.refresh_token_iat != refresh_token_iat:
             # The refresh token has been invalidated by a user logout.
             return Response(status=401)
-        identity = get_jwt_identity()
         now = datetime.datetime.now(datetime.timezone.utc)
-        access_token = create_access_token(identity=identity, fresh=False)
+        access_token = create_access_token(identity=current_user, fresh=False)
         access_expiration_date = now + jwt_config.access_expires
         data = {
             'token': access_token,
