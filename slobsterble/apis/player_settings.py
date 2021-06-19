@@ -55,18 +55,23 @@ class PlayerSettingsView(Resource):
     @jwt_required()
     def get():
         """Get the player's current settings."""
-        player = db.session.query(Player).filter_by(user_id=current_user.id)
+        player = db.session.query(Player).filter_by(
+            user_id=current_user.id).one()
         player_data = player.serialize(
             override_mask={
                 'Player': ['display_name', 'dictionary', 'friend_key',
                            'distribution', 'board_layout'],
-                'Dictionary': ['id', 'name']})
+                'Dictionary': ['id', 'name'],
+                'Distribution': ['id', 'name'],
+                'BoardLayout': ['id', 'name']
+            }
+        )
         dictionaries = db.session.query(Dictionary).all()
         dictionaries_data = []
         for dictionary in dictionaries:
             dictionaries_data.append(
                 dictionary.serialize(
-                    override_mask={Dictionary: ['id', 'name']}))
+                    override_mask={'Dictionary': ['id', 'name']}))
         data = {'player': player_data,
                 'dictionaries': dictionaries_data}
         return jsonify(data)

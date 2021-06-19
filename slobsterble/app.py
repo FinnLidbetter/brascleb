@@ -101,6 +101,7 @@ def init_api(app):
         LogoutView,
         MoveHistoryView,
         NewGameView,
+        PlayerSettingsView,
         RegisterView,
         TileDistributionView,
         TokenRefreshView,
@@ -121,6 +122,7 @@ def init_api(app):
     api.add_resource(GameView, '/api/game/<int:game_id>')
     api.add_resource(MoveHistoryView, '/api/game/<int:game_id>/move-history')
     api.add_resource(FriendsView, '/api/friends')
+    api.add_resource(PlayerSettingsView, '/api/player-settings')
     api.init_app(app)
 
 

@@ -33,7 +33,7 @@ from slobsterble.utilities.tile_utilities import (
     build_tile_count_map,
     build_tile_object_map,
     fetch_all_tiles,
-    fetch_mapped_tile_counts,
+    fetch_mapped_tile_counts_from_set,
 )
 
 
@@ -127,6 +127,7 @@ class StatefulValidator:
     def validate(self):
         """Perform stateful validation."""
         valid = True
+        valid &= self._validate_incomplete()
         valid &= self._validate_user_turn()
         valid &= self._validate_rack_tiles()
         valid &= self._validate_first_turn()
@@ -135,6 +136,12 @@ class StatefulValidator:
         valid &= self._validate_contiguous()
         self.validated = valid
         return valid
+
+    def _validate_incomplete(self):
+        """Validate that the game has not been completed already."""
+        if self.game_state.completed is not None:
+            raise slobsterble.api_exceptions.PlayCompleteException()
+        return True
 
     def _validate_user_turn(self):
         """Validate that it is the user's turn and return the game player."""
@@ -176,6 +183,7 @@ class StatefulValidator:
                         and played_tile['column'] == centre_column:
                     return True
             raise slobsterble.api_exceptions.PlayFirstTurnException()
+        return True
 
     def _validate_no_overlap(self):
         """The played tiles must not be in already occupied positions."""
@@ -250,9 +258,9 @@ class WordBuilder:
     def __init__(self, data, game_board):
         self.data = data
         self.data_letters = {
-            (tile.row, tile.column): tile.letter for tile in data}
+            (tile['row'], tile['column']): tile['letter'] for tile in data}
         self.data_values = {
-            (tile.row, tile.column): tile.letter for tile in data}
+            (tile['row'], tile['column']): tile['value'] for tile in data}
         self.game_board = game_board
 
     def get_played_words(self):
@@ -320,7 +328,8 @@ class WordBuilder:
         primary_axis = Axis.ROW
         secondary_axis = Axis.COLUMN
         if self.data[0]['row'] != self.data[1]['row']:
-            primary_axis, secondary_axis = secondary_axis, primary_axis
+            primary_axis = Axis.COLUMN
+            secondary_axis = Axis.ROW
         score_sum = 0
         score_sum += self._score_axis(
             self.data[0]['row'], self.data[0]['column'], primary_axis)
@@ -333,12 +342,11 @@ class WordBuilder:
 
     def _build_axis(self, start_row, start_column, axis):
         """Build a word from the given start position along the given axis."""
-        assert axis in ('row', 'column')
         word_deque = deque()
         if axis is Axis.ROW:
-            delta_pairs = [(-1, 0), (1, 0)]
-        elif axis is Axis.COLUMN:
             delta_pairs = [(0, -1), (0, 1)]
+        elif axis is Axis.COLUMN:
+            delta_pairs = [(-1, 0), (1, 0)]
         else:
             raise ValueError('Non Axis value %s passed to _build_axis.')
         board_tiles = self.game_board.played_tiles
@@ -369,7 +377,7 @@ class WordBuilder:
 
     def _score_axis(self, start_row, start_column, axis):
         """Get the score through the given position and axis."""
-        delta_pairs = [(-1, 0), (1, 0)] if axis is Axis.ROW else [(0, -1), (0, 1)]
+        delta_pairs = [(0, -1), (0, 1)] if axis is Axis.ROW else [(-1, 0), (1, 0)]
         board_tiles = self.game_board.played_tiles
         score_sum = 0
         word_multiplier = 1
@@ -394,7 +402,8 @@ class WordBuilder:
                 column += column_delta
                 word_len += 1
         if (start_row == self.game_board.rows // 2
-                and start_column == self.game_board.columns // 2) or word_len > 1:
+                and start_column == self.game_board.columns // 2
+                and len(self.data) == 1) or word_len > 1:
             # Special case for the first turn if a single letter is played.
             return score_sum * word_multiplier
         return 0
@@ -409,9 +418,9 @@ class WordValidator:
 
     def validate(self):
         for word in self.words:
-            if not db.session.query(Dictionary).filter(
+            if db.session.query(Dictionary).filter(
                     Dictionary.id == self.dictionary_id).join(
-                    Dictionary.entries).filter(Entry.word == word).exists():
+                    Dictionary.entries).filter(Entry.word == word).first() is None:
                 raise slobsterble.api_exceptions.PlayDictionaryException()
         return True
 
@@ -439,10 +448,18 @@ class StateUpdater:
         # Fetch and create required objects.
         all_tiles = fetch_all_tiles(db.session)
         tile_object_map = build_tile_object_map(all_tiles)
-        tile_counts_union = next_rack_state | next_bag_state | \
-            self.initial_rack_state | exchanged_state
-        tile_count_object_map = fetch_mapped_tile_counts(
-            db.session, tile_counts_union, tile_object_map)
+        tile_counts_set = set()
+        tile_count_holders = [
+            next_rack_state, next_bag_state,
+            self.initial_rack_state, exchanged_state]
+        for tile_count_holder in tile_count_holders:
+            tile_counts_set.update({
+                (tile_key, count) for tile_key, count in tile_count_holder.items()
+            })
+
+        tile_count_object_map = fetch_mapped_tile_counts_from_set(db.session, tile_counts_set, tile_object_map)
+        # tile_count_object_map = fetch_mapped_tile_counts(
+        #     db.session, tile_counts_union, tile_object_map)
         played_tiles = self._fetch_played_tiles(tile_object_map)
 
         # Assemble the required TileCount objects for the Game, Move, and
@@ -452,7 +469,7 @@ class StateUpdater:
             for tile_key, count in self.initial_rack_state.items()]
         exchanged_tiles = [
             tile_count_object_map[(tile_key, count)]
-            for tile_key, count in exchanged_state]
+            for tile_key, count in exchanged_state.items()]
         next_rack = [
             tile_count_object_map[(tile_key, count)]
             for tile_key, count in next_rack_state.items()]
@@ -465,6 +482,7 @@ class StateUpdater:
             game_player_id=self.game_player.id, primary_word=self.primary_word,
             secondary_words=','.join(self.secondary_words),
             rack_tiles=initial_rack, exchanged_tiles=exchanged_tiles,
+            played_tiles=played_tiles,
             turn_number=self.game_state.turn_number, score=self.turn_score,
             played_time=played_time)
         db.session.add(move)
@@ -507,11 +525,13 @@ class StateUpdater:
         next_rack_state = self.initial_rack_state.copy()
         next_bag_state = self.initial_bag_state.copy()
         for played_tile in self.data:
-            tile_key = (played_tile['letter'], played_tile['value'],
-                        played_tile['is_blank'])
+            tile_key_letter = played_tile['letter'] if not played_tile['is_blank'] else None
+            tile_key = (tile_key_letter, played_tile['value'], played_tile['is_blank'])
             next_rack_state[tile_key] -= 1
             if played_tile['is_exchange']:
-                next_rack_state[tile_key] += 1
+                next_bag_state[tile_key] += 1
+            if next_rack_state[tile_key] == 0:
+                del next_rack_state[tile_key]
         num_tiles_in_bag = sum(next_bag_state.values())
         num_tiles_on_rack = sum(next_rack_state.values())
         num_tiles_to_draw = min(
@@ -528,6 +548,8 @@ class StateUpdater:
             drawn_tiles = []
         for tile_key in drawn_tiles:
             next_bag_state[tile_key] -= 1
+            if next_bag_state[tile_key] == 0:
+                del next_bag_state[tile_key]
             next_rack_state[tile_key] += 1
         return next_rack_state, next_bag_state
 
@@ -563,7 +585,7 @@ class StateUpdater:
                     letter=tile_key[0], value=tile_key[1], is_blank=tile_key[2])[0]
             played_tile = fetch_or_create(
                 db.session, PlayedTile,
-                tile_id=tile_object_map[tile_key], row=row, column=column)[0]
+                tile_id=tile_object_map[tile_key].id, row=row, column=column)[0]
             played_tiles.append(played_tile)
         return played_tiles
 

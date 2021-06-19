@@ -42,11 +42,16 @@ class ListGamesView(Resource):
         def _game_player_sort(game_player):
             return game_player['turn_order']
 
+        def _game_sort(game):
+            return game['completed'] or 0, game['started']
+
         serialized_games = Game.serialize_list(
             user_games,
             override_mask={'Game': ['started', 'completed', 'whose_turn_name',
                                     'game_players', 'id'],
                            'GamePlayer': ['score', 'player', 'turn_order'],
                            'Player': ['display_name', 'id']},
-            sort_keys={'GamePlayer': _game_player_sort})
+            sort_keys={
+                'Game': _game_sort,
+                'GamePlayer': _game_player_sort})
         return jsonify(serialized_games)

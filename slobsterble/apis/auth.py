@@ -17,7 +17,6 @@ from flask_jwt_extended import (
     create_refresh_token,
     current_user,
     decode_token,
-    get_jwt_identity,
     jwt_required,
     get_jwt,
 )
@@ -47,12 +46,12 @@ class TokenRefreshView(Resource):
         if current_user.refresh_token_iat != refresh_token_iat:
             # The refresh token has been invalidated by a user logout.
             return Response(status=401)
-        now = datetime.datetime.now(datetime.timezone.utc)
         access_token = create_access_token(identity=current_user, fresh=False)
-        access_expiration_date = now + jwt_config.access_expires
+        access_expiration_timestamp = \
+            decode_token(access_token).get('iat') + jwt_config.access_expires.seconds
         data = {
             'token': access_token,
-            'expiration_date': access_expiration_date
+            'expiration_date': access_expiration_timestamp
         }
         return jsonify(data)
 
@@ -77,11 +76,11 @@ class LoginView(Resource):
         refresh_expiration_date = now + jwt_config.refresh_expires
         data = {
             'access_token': {
-                'certificate': access_token,
+                'token': access_token,
                 'expiration_date': access_expiration_date.timestamp(),
             },
             'refresh_token': {
-                'certificate': refresh_token,
+                'token': refresh_token,
                 'expiration_date': refresh_expiration_date.timestamp(),
             }
         }

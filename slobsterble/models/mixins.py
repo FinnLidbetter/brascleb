@@ -49,7 +49,7 @@ class ModelSerializer:
             result = self.serialize_list(obj, exclusions, override_mask, sort_keys)
             return result
         elif isinstance(obj, datetime):
-            return obj.timestamp()
+            return int(obj.timestamp())
         elif isinstance(obj, (bool, int)):
             return obj
         elif obj is None:

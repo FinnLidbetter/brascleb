@@ -44,6 +44,25 @@ def fetch_mapped_tile_counts(session, tile_counts_map, tile_object_map):
     return tile_counts_object_map
 
 
+def fetch_mapped_tile_counts_from_set(session, tile_counts_set, tile_object_map):
+    """
+    Fetch tile count objects from a set of (tile_key, count) pairs.
+
+    If the required TileCount or Tile objects do not exist, then those objects
+    will be created and committed to the database.
+    """
+    tile_counts_object_map = {}
+    for tile_key, count in tile_counts_set:
+        if tile_key not in tile_object_map:
+            tile_object_map[tile_key] = fetch_or_create(
+                session, Tile,
+                letter=tile_key[0], value=tile_key[1], is_blank=tile_key[2])[0]
+        tile_counts_object_map[(tile_key, count)] = fetch_or_create(
+            session, TileCount,
+            tile_id=tile_object_map[tile_key].id, count=count)[0]
+    return tile_counts_object_map
+
+
 def fetch_all_tiles(session):
     """Fetch all tiles."""
     return session.query(Tile).all()

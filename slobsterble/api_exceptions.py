@@ -53,6 +53,11 @@ class PlayAxisException(BaseApiException):
     default_message = 'Played tiles do not lie on a single axis.'
 
 
+class PlayCompleteException(BaseApiException):
+    """The game must not be completed already."""
+    default_message = 'Ths game is over already.'
+
+
 class PlayCurrentTurnException(BaseApiException):
     """It must be the user's turn in the game for them to play."""
     default_message = 'It is not your turn.'
