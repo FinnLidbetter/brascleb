@@ -486,6 +486,8 @@ class StateUpdater:
         self.game_player.score += self.turn_score
         self.game_state.board_state.extend(played_tiles)
         self.game_state.turn_number += 1
+        if self.turn_score > self.game_player.player.best_word_score:
+            self.game_player.player.best_word_score = self.turn_score
         if not self.game_player.rack and not self.game_state.bag_tiles:
             self.game_state.completed = played_time
             remaining_sum = 0
@@ -512,6 +514,13 @@ class StateUpdater:
                         curr_game_player.player.ties += 1
                 else:
                     curr_game_player.player.losses += 1
+            combined_score = sum(
+                curr_game_player.score for curr_game_player in self.game_state.game_players)
+            for curr_game_player in self.game_state.game_players:
+                if curr_game_player.score > curr_game_player.player.highest_individual_score:
+                    curr_game_player.player.highest_individual_score = curr_game_player.score
+                if combined_score > curr_game_player.player.highest_combined_score:
+                    curr_game_player.player.highest_combined_score = combined_score
         db.session.commit()
 
     def _get_next_bag_and_rack(self):
