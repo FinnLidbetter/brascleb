@@ -54,4 +54,4 @@ class MoveHistoryView(Resource):
                 }
             )
             serialized_moves.append(serialized_game_player_moves)
-        return jsonify({'game_players': serialized_moves})
+        return jsonify(serialized_moves)

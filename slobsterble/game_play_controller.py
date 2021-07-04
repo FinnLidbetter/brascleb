@@ -1,3 +1,5 @@
+"""Module for controlling how a turn is played."""
+
 import datetime
 from collections import defaultdict, deque, namedtuple
 from enum import Enum
@@ -5,7 +7,6 @@ from random import Random
 
 from flask_jwt_extended import current_user
 from jsonschema import validate as schema_validate, ValidationError
-from sqlalchemy.orm import joinedload
 
 
 import slobsterble.api_exceptions
@@ -17,12 +18,7 @@ from slobsterble.constants import (
 from slobsterble.game_play_schema import TURN_PLAY_SCHEMA
 from slobsterble.models import (
     Game,
-    GamePlayer,
-    Player,
-    TileCount,
     PlayedTile,
-    PositionedModifier,
-    BoardLayout,
     Dictionary,
     Entry,
     Tile,
@@ -273,7 +269,7 @@ class WordBuilder:
         along the row. Secondary words are all other words created by the turn.
         """
         if len(self.data) == 0 or self.data[0]['is_exchange']:
-            return None, []
+            return None, None
         if len(self.data) == 1:
             # Special case.
             row_word = self._build_axis(
@@ -458,8 +454,6 @@ class StateUpdater:
             })
 
         tile_count_object_map = fetch_mapped_tile_counts_from_set(db.session, tile_counts_set, tile_object_map)
-        # tile_count_object_map = fetch_mapped_tile_counts(
-        #     db.session, tile_counts_union, tile_object_map)
         played_tiles = self._fetch_played_tiles(tile_object_map)
 
         # Assemble the required TileCount objects for the Game, Move, and
@@ -480,7 +474,7 @@ class StateUpdater:
         # Create the move object.
         move = Move(
             game_player_id=self.game_player.id, primary_word=self.primary_word,
-            secondary_words=','.join(self.secondary_words),
+            secondary_words=None if self.secondary_words is None else ','.join(self.secondary_words),
             rack_tiles=initial_rack, exchanged_tiles=exchanged_tiles,
             played_tiles=played_tiles,
             turn_number=self.game_state.turn_number, score=self.turn_score,
@@ -495,29 +489,29 @@ class StateUpdater:
         if not self.game_player.rack and not self.game_state.bag_tiles:
             self.game_state.completed = played_time
             remaining_sum = 0
-            for game_player in self.game_state.game_players:
+            for curr_game_player in self.game_state.game_players:
                 player_rack_tile_sum = sum(
                     tile_count.tile.value * tile_count.count
-                    for tile_count in game_player.rack)
-                game_player.score -= player_rack_tile_sum
+                    for tile_count in curr_game_player.rack)
+                curr_game_player.score -= player_rack_tile_sum
                 remaining_sum += player_rack_tile_sum
             self.game_player.score += remaining_sum
             best_score = 0
             best_score_count = 0
-            for game_player in self.game_state.game_players:
-                if game_player.score == best_score:
+            for curr_game_player in self.game_state.game_players:
+                if curr_game_player.score == best_score:
                     best_score_count += 1
-                elif game_player.score > best_score:
-                    best_score = game_player.score
+                elif curr_game_player.score > best_score:
+                    best_score = curr_game_player.score
                     best_score_count = 1
-            for game_player in self.game_state.game_players:
-                if game_player.score == best_score:
+            for curr_game_player in self.game_state.game_players:
+                if curr_game_player.score == best_score:
                     if best_score_count == 1:
-                        game_player.player.wins += 1
+                        curr_game_player.player.wins += 1
                     else:
-                        game_player.player.ties += 1
+                        curr_game_player.player.ties += 1
                 else:
-                    game_player.player.losses += 1
+                    curr_game_player.player.losses += 1
         db.session.commit()
 
     def _get_next_bag_and_rack(self):
@@ -600,16 +594,22 @@ def get_game_player(game_state):
 
 
 def fetch_game_state(game_id):
-    """Fetch all data, except dictionary lookups, needed for turn validation."""
-    game_state = db.session.query(Game).filter(Game.id == game_id).options(
-        joinedload(Game.game_players).options(
-            joinedload(GamePlayer.player).joinedload(Player.user),
-            joinedload(GamePlayer.rack).joinedload(TileCount.tile)),
-        joinedload(Game.board_state).joinedload(PlayedTile.tile),
-        joinedload(Game.bag_tiles).joinedload(TileCount.tile),
-        joinedload(Game.board_layout).joinedload(
-            BoardLayout.modifiers).joinedload(PositionedModifier.modifier),
-    ).one()
+    """
+    Fetch all data, except dictionary lookups, needed for turn validation.
+
+    Note for future investigation. The commented out query that preloads all
+    necessary data makes this so much slower!
+    """
+    # game_state = db.session.query(Game).filter(Game.id == game_id).options(
+    #     joinedload(Game.game_players).options(
+    #         joinedload(GamePlayer.player).joinedload(Player.user),
+    #         joinedload(GamePlayer.rack).joinedload(TileCount.tile)),
+    #     joinedload(Game.board_state).joinedload(PlayedTile.tile),
+    #     joinedload(Game.bag_tiles).joinedload(TileCount.tile),
+    #     joinedload(Game.board_layout).joinedload(
+    #         BoardLayout.modifiers).joinedload(PositionedModifier.modifier),
+    # ).one()
+    game_state = db.session.query(Game).filter(Game.id == game_id).one()
     return game_state
 
 

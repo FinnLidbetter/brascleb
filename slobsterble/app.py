@@ -93,6 +93,7 @@ def init_api(app):
         AdminLoginView,
         AdminLogoutView,
         BoardLayoutView,
+        DictionaryView,
         FriendsView,
         GameView,
         IndexView,
@@ -123,6 +124,7 @@ def init_api(app):
     api.add_resource(MoveHistoryView, '/api/game/<int:game_id>/move-history')
     api.add_resource(FriendsView, '/api/friends')
     api.add_resource(PlayerSettingsView, '/api/player-settings')
+    api.add_resource(DictionaryView, '/api/game/<int:game_id>/verify-word/<string:word>')
     api.init_app(app)
 
 

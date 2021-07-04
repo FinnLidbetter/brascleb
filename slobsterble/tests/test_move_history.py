@@ -37,8 +37,8 @@ def test_no_moves(client, alice_headers, alice_bob_game):
                       headers=alice_headers)
     assert resp.status_code == 200
     data = json.loads(resp.get_data())
-    assert len(data['game_players']) == 2
-    for player_moves in data['game_players']:
+    assert len(data) == 2
+    for player_moves in data:
         assert player_moves['moves'] == []
 
 
@@ -57,9 +57,9 @@ def test_one_regular_move(client, alice_headers, bob_headers, alice_bob_game, db
         resp = client.get(f'/api/game/{game.id}/move-history', headers=headers)
         data = json.loads(resp.get_data())
         assert resp.status_code == 200
-        assert len(data['game_players']) == 2
-        alice_player_moves = data['game_players'][0]
-        bob_player_moves = data['game_players'][1]
+        assert len(data) == 2
+        alice_player_moves = data[0]
+        bob_player_moves = data[1]
         assert alice_player_moves['turn_order'] == 0
         assert bob_player_moves['turn_order'] == 1
         assert len(bob_player_moves['moves']) == 0
@@ -100,8 +100,8 @@ def test_exchange(client, alice_headers, alice_bob_game, db):
     resp = client.get(f'/api/game/{game.id}/move-history', headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
-    assert len(data['game_players']) == 2
-    alice_player_moves = data['game_players'][0]
+    assert len(data) == 2
+    alice_player_moves = data[0]
     moves = alice_player_moves['moves']
     assert len(moves) == 1
     assert moves[0]['primary_word'] is None
@@ -163,8 +163,8 @@ def test_pass_move(client, alice_headers, alice_bob_game, db):
     resp = client.get(f'/api/game/{game.id}/move-history', headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
-    assert len(data['game_players']) == 2
-    alice_player_moves = data['game_players'][0]
+    assert len(data) == 2
+    alice_player_moves = data[0]
     moves = alice_player_moves['moves']
     assert moves == [
         {'primary_word': None, 'secondary_words': None,
@@ -249,11 +249,10 @@ def test_three_player_game(client, alice_headers, bob_headers, carol_headers,
         resp = client.get(f'/api/game/{game.id}/move-history', headers=headers)
         data = json.loads(resp.get_data())
         assert resp.status_code == 200
-        assert len(data) == 1
-        assert len(data['game_players']) == 3
-        alice_moves = data['game_players'][0]['moves']
-        bob_moves = data['game_players'][1]['moves']
-        carol_moves = data['game_players'][2]['moves']
+        assert len(data) == 3
+        alice_moves = data[0]['moves']
+        bob_moves = data[1]['moves']
+        carol_moves = data[2]['moves']
         assert alice_moves == expected_alice_moves
         assert bob_moves == expected_bob_moves
         assert carol_moves == expected_carol_moves
