@@ -3,7 +3,7 @@
 import random
 
 from flask_login import UserMixin
-from sqlalchemy import PrimaryKeyConstraint
+from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import backref, relation, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -12,6 +12,7 @@ from slobsterble.constants import (
     DISPLAY_NAME_LENGTH_MAX,
     FRIEND_KEY_CHARACTERS,
     FRIEND_KEY_LENGTH,
+    UDID_MAX_LENGTH,
 )
 from slobsterble.models.mixins import (
     MetadataMixin,
@@ -131,3 +132,24 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
 
     def __repr__(self):
         return '%s (%d)' % (self.__str__(), self.id)
+
+
+class Device(db.Model, ModelMixin, ModelSerializer):
+    """Model to associate devices with users."""
+    __tablename__ = 'device'
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'device_token'),
+    )
+
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id'), nullable=False,
+    )
+    user = relationship(
+        'User', backref=db.backref('devices', cascade='all,delete'),
+        doc='The user associated with this device.'
+    )
+    device_token = db.Column(
+        db.String(UDID_MAX_LENGTH), nullable=False,
+        doc='The device identifier.'
+    )

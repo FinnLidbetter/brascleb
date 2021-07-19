@@ -39,6 +39,6 @@ def load_config(settings, testing=False):
     settings.JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(
         seconds=config.getint('jwt', 'JWT_ACCESS_TOKEN_EXPIRE_SECONDS'))
     settings.JWT_REFRESH_TOKEN_EXPIRES = datetime.timedelta(
-        hours=config.getint('jwt', 'JWT_REFRESH_TOKEN_EXPIRE_HOURS'))
+        hours=config.getfloat('jwt', 'JWT_REFRESH_TOKEN_EXPIRE_HOURS'))
     settings.JWT_COOKIE_SECURE = config.getboolean('jwt', 'JWT_COOKIE_SECURE')
     settings.JWT_TOKEN_LOCATION = config.get('jwt', 'JWT_TOKEN_LOCATION').split(',')

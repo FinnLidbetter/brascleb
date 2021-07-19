@@ -2,7 +2,7 @@
 Data migration to create YAWL and ENABLE dictionaries.
 
 Revision ID: 3ea1bfba1ae7
-Revises: a8422b714821
+Revises: f5393c3194a7
 Create Date: 2020-06-11 21:16:27.361069
 
 """
@@ -20,7 +20,7 @@ from slobsterble.models import Dictionary, Entry
 
 # revision identifiers, used by Alembic.
 revision = '3ea1bfba1ae7'
-down_revision = 'a8422b714821'
+down_revision = 'f5393c3194a7'
 branch_labels = None
 depends_on = None
 

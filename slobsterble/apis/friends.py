@@ -56,7 +56,10 @@ class FriendsView(Resource):
             subqueryload(Player.friends)).one()
         friend_player = db.session.query(Player).filter_by(
             friend_key=data['friend_key']).options(
-            subqueryload(Player.friends)).one()
+            subqueryload(Player.friends)).one_or_none()
+        if friend_player is None:
+            return Response(
+                'No player has friend key %s.' % data['friend_key'], status=400)
         if current_player.id == friend_player.id:
             return Response('You cannot add yourself as a friend.', status=400)
         already_friends = True

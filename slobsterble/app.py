@@ -58,6 +58,8 @@ def init_admin(app):
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.BoardLayout, db.session))
     admin.add_view(
+        SlobsterbleModelView(slobsterble.models.Device, db.session))
+    admin.add_view(
         SlobsterbleModelView(slobsterble.models.Dictionary, db.session))
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.Distribution, db.session))

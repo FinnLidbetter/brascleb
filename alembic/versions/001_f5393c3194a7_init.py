@@ -1,9 +1,9 @@
 """
-Initialize database models.
+Initialize models.
 
-Revision ID: a8422b714821
+Revision ID: f5393c3194a7
 Revises: 
-Create Date: 2021-05-24 22:15:54.550883
+Create Date: 2021-07-18 22:38:00.561984
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a8422b714821'
+revision = 'f5393c3194a7'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -101,10 +101,20 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('activated', sa.Boolean(), nullable=False),
     sa.Column('username', sa.String(length=255, collation='NOCASE'), nullable=False),
-    sa.Column('password_hash', sa.String(length=255), nullable=False),
     sa.Column('refresh_token_iat', sa.Integer(), nullable=True),
+    sa.Column('password_hash', sa.String(length=255), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('username')
+    )
+    op.create_table('device',
+    sa.Column('created', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('modified', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('device_token', sa.String(length=64), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'device_token')
     )
     op.create_table('entries',
     sa.Column('entry_id', sa.Integer(), nullable=False),
@@ -289,6 +299,7 @@ def downgrade():
     op.drop_table('modifiers')
     op.drop_table('game')
     op.drop_table('entries')
+    op.drop_table('device')
     op.drop_table('user')
     op.drop_table('tile')
     op.drop_table('role')

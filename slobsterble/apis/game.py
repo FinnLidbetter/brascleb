@@ -41,17 +41,23 @@ class GameView(Resource):
                    for game_player in game_state.game_players):
             return Response('User is not authorized to access this game.',
                             status=401)
+
+        def _game_player_sort(game_player):
+            return game_player['turn_order']
+
         serialized_game_state = game_state.serialize(
             override_mask={'Game': ['board_state', 'game_players',
+                                    'turn_number',
                                     'whose_turn_name', 'num_tiles_remaining',
                                     'board_layout'],
-                           'GamePlayer': ['score', 'player'],
+                           'GamePlayer': ['score', 'player', 'turn_order'],
                            'Player': ['id', 'display_name'],
                            'PlayedTile': ['tile', 'row', 'column'],
                            'Tile': ['letter', 'is_blank', 'value'],
                            'BoardLayout': ['rows', 'columns', 'modifiers'],
                            'PositionedModifier': ['row', 'column', 'modifier'],
-                           'Modifier': ['letter_multiplier', 'word_multiplier']})
+                           'Modifier': ['letter_multiplier', 'word_multiplier']},
+            sort_keys={'GamePlayer': _game_player_sort})
         current_game_player = None
         for game_player in game_state.game_players:
             if game_player.player.user_id == current_user.id:

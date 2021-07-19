@@ -27,6 +27,7 @@ from werkzeug.security import generate_password_hash
 from slobsterble.app import db
 from slobsterble.models import (
     BoardLayout,
+    Device,
     Dictionary,
     Distribution,
     Player,
@@ -62,6 +63,7 @@ class LoginView(Resource):
     def post():
         username = request.json.get("username", None)
         password = request.json.get("password", None)
+        device_token = request.json.get("deviceToken", None)
 
         user = User.query.filter_by(username=username).one_or_none()
         if not user or not user.check_password(password):
@@ -84,6 +86,14 @@ class LoginView(Resource):
                 'expiration_date': refresh_expiration_date.timestamp(),
             }
         }
+        if device_token is not None:
+            device_query = db.session.query(Device).filter_by(
+                user_id=user.id,
+                device_token=device_token
+            ).one_or_none()
+            if device_query is None:
+                device = Device(user=user, device_token=device_token)
+                db.session.add(device)
         db.session.commit()
         return jsonify(data)
 
