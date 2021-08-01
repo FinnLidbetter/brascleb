@@ -87,7 +87,18 @@ class PlayContiguousException(BaseApiException):
 
 class PlayDictionaryException(BaseApiException):
     """One or more of the created words is not found in the dictionary."""
-    default_message = 'One or more created words are not in the dictionary.'
+
+    def __init__(self, invalid_words):
+        if len(invalid_words) == 1:
+            message = '%s is not in dictionary.' % invalid_words[0]
+        elif len(invalid_words) == 2:
+            message = '%s and %s are not in the dictionary.' % (
+                invalid_words[0], invalid_words[1])
+        else:
+            comma_words = ', '.join(invalid_words[:-1])
+            message = '%s, and %s are not in the dictionary.' % (
+                comma_words, invalid_words[-1])
+        super().__init__(message_override=message)
 
 
 class PlayFirstTurnException(BaseApiException):

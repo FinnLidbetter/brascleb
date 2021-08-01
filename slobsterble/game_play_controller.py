@@ -413,11 +413,14 @@ class WordValidator:
         self.dictionary_id = dictionary_id
 
     def validate(self):
+        invalid_words = []
         for word in self.words:
             if db.session.query(Dictionary).filter(
                     Dictionary.id == self.dictionary_id).join(
                     Dictionary.entries).filter(Entry.word == word).first() is None:
-                raise slobsterble.api_exceptions.PlayDictionaryException()
+                invalid_words.append(word)
+        if invalid_words:
+            raise slobsterble.api_exceptions.PlayDictionaryException(invalid_words)
         return True
 
 

@@ -76,8 +76,6 @@ def init_admin(app):
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.PositionedModifier, db.session))
     admin.add_view(
-        SlobsterbleModelView(slobsterble.models.Role, db.session))
-    admin.add_view(
         SlobsterbleModelView(slobsterble.models.Tile, db.session))
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.TileCount, db.session))

@@ -11,10 +11,12 @@ class MetadataMixin:
     created = db.Column(
         db.DateTime(timezone=True),
         server_default=func.now(),
+        nullable=False,
         doc='The date and time that the model first created.')
     modified = db.Column(
         db.DateTime(timezone=True),
-        default=func.now(),
+        server_default=func.now(),
+        nullable=False,
         onupdate=func.now(),
         doc='The date and time that the model was last modified.')
 

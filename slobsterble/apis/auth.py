@@ -92,8 +92,11 @@ class LoginView(Resource):
                 device_token=device_token
             ).one_or_none()
             if device_query is None:
-                device = Device(user=user, device_token=device_token)
+                device = Device(user=user, device_token=device_token,
+                                refreshed=datetime.datetime.now())
                 db.session.add(device)
+            else:
+                device_query.refreshed = datetime.datetime.now()
         db.session.commit()
         return jsonify(data)
 

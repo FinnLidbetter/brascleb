@@ -3,7 +3,7 @@
 import random
 
 from flask_login import UserMixin
-from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint
+from sqlalchemy import func, PrimaryKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import backref, relation, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -20,17 +20,6 @@ from slobsterble.models.mixins import (
     ModelSerializer,
 )
 
-
-user_roles = db.Table(
-    'user_roles',
-    db.Column('user_id',
-              db.Integer,
-              db.ForeignKey('user.id'),
-              primary_key=True),
-    db.Column('role_id',
-              db.Integer,
-              db.ForeignKey('role.id'),
-              primary_key=True))
 
 friends = db.Table(
     'friends',
@@ -61,7 +50,6 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
             'token. Contains None if the user has manually logged out or has '
             'never logged in.')
     password_hash = db.Column(db.String(255), nullable=False)
-    roles = db.relationship('Role', secondary=user_roles)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -71,11 +59,6 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
 
     def __repr__(self):
         return self.username
-
-
-class Role(db.Model, ModelMixin, ModelSerializer):
-    """Model for authentication and restricting access."""
-    name = db.Column(db.String(50), unique=True)
 
 
 def random_friend_key():
@@ -152,4 +135,10 @@ class Device(db.Model, ModelMixin, ModelSerializer):
     device_token = db.Column(
         db.String(UDID_MAX_LENGTH), nullable=False,
         doc='The device identifier.'
+    )
+    refreshed = db.Column(
+        db.DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+        doc='The most recent time that the user logged in with this device.'
     )
