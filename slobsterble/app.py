@@ -9,6 +9,7 @@ from flask_migrate import Migrate
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
+from sqlalchemy import inspect
 from werkzeug.security import generate_password_hash
 
 import slobsterble.settings
@@ -26,7 +27,7 @@ def init_db(app):
     db.init_app(app)
     from slobsterble.models import User
     with app.app_context():
-        if db.engine.dialect.has_table(db.engine, 'User'):
+        if inspect(db.engine).has_table('User'):
             admin_user_exists = User.query.filter_by(
                 username=app.config['ADMIN_USERNAME']).one_or_none() is not None
             if not admin_user_exists:
