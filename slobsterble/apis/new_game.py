@@ -13,6 +13,7 @@ from slobsterble.game_setup_controller import (
 )
 from slobsterble.models import Distribution, Player
 from slobsterble.api_exceptions import BaseApiException
+from slobsterble.notifications.notify import notify_new_game
 
 
 class NewGameView(Resource):
@@ -52,8 +53,9 @@ class NewGameView(Resource):
             stateful_validator = StatefulValidator(data, player)
             stateful_validator.validate()
             state_updater = StateUpdater(data, player)
-            state_updater.update_state()
-            return Response('New game created successfully.', status=200)
+            game_id, game_players = state_updater.update_state()
+            notify_new_game(game_id, game_players, player)
+            return Response(str(game_id), status=200)
         except BaseApiException as new_game_error:
             return Response(
                 str(new_game_error), status=new_game_error.status_code)

@@ -496,6 +496,8 @@ class StateUpdater:
         if self.turn_score > self.game_player.player.best_word_score:
             self.game_player.player.best_word_score = self.turn_score
         game_over = False
+        print(self.game_player.rack)
+        print(self.game_state.bag_tiles)
         if not self.game_player.rack and not self.game_state.bag_tiles:
             game_over = True
             self.game_state.completed = played_time

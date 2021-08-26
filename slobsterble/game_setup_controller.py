@@ -136,6 +136,8 @@ class StateUpdater:
             game_player.rack = rack_tile_counts
             for tile_key, count in rack_tile_count_map.items():
                 bag_tile_count_map[tile_key] -= count
+                if bag_tile_count_map[tile_key] == 0:
+                    del bag_tile_count_map[tile_key]
                 tiles_remaining -= count
         mapped_bag_tile_counts = fetch_mapped_tile_counts(
             db.session, bag_tile_count_map, tile_object_map)
@@ -143,6 +145,7 @@ class StateUpdater:
         db.session.add(base_game)
         db.session.add_all(base_game_players)
         db.session.commit()
+        return base_game.id, base_game_players
 
     def _build_base_game(self):
         """Build the initial Game object without players or the bag state."""
