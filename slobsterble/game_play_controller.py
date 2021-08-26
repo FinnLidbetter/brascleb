@@ -441,7 +441,11 @@ class StateUpdater:
         self.initial_bag_state = build_tile_count_map(self.game_state.bag_tiles)
 
     def update_state(self):
-        """Update the state of the game with the current turn."""
+        """
+        Update the state of the game with the current turn.
+
+        Returns True iff the game is over after the state is updated.
+        """
         next_rack_state, next_bag_state = self._get_next_bag_and_rack()
         exchanged_state = self._get_exchanged()
         # Fetch and create required objects.
@@ -491,7 +495,9 @@ class StateUpdater:
         self.game_state.turn_number += 1
         if self.turn_score > self.game_player.player.best_word_score:
             self.game_player.player.best_word_score = self.turn_score
+        game_over = False
         if not self.game_player.rack and not self.game_state.bag_tiles:
+            game_over = True
             self.game_state.completed = played_time
             remaining_sum = 0
             for curr_game_player in self.game_state.game_players:
@@ -525,6 +531,7 @@ class StateUpdater:
                 if combined_score > curr_game_player.player.highest_combined_score:
                     curr_game_player.player.highest_combined_score = combined_score
         db.session.commit()
+        return game_over
 
     def _get_next_bag_and_rack(self):
         """Get the rack and bag state after placing and drawing tiles."""

@@ -1,5 +1,5 @@
 """Initialise the Flask app."""
-
+import logging
 import os
 
 from flask import Flask, Response
@@ -13,6 +13,7 @@ from sqlalchemy import inspect
 from werkzeug.security import generate_password_hash
 
 import slobsterble.settings
+from slobsterble.notifications import APNSManager
 
 db = SQLAlchemy()
 admin = Admin()
@@ -20,6 +21,7 @@ login_manager = LoginManager()
 migrate = Migrate()
 api = Api()
 jwt = JWTManager()
+apns = APNSManager()
 
 
 def init_db(app):
@@ -157,6 +159,14 @@ def init_login(app):
         return User.query.get(int(user_id))
 
 
+def init_notifications(app):
+    apns.init_app(app)
+
+
+def init_logging():
+    logging.basicConfig()
+
+
 def create_app():
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
@@ -168,5 +178,7 @@ def create_app():
     init_login(app)
     init_api(app)
     init_admin(app)
+    init_notifications(app)
+    init_logging()
 
     return app

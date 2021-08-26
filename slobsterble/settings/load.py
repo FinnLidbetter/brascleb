@@ -35,6 +35,7 @@ def load_config(settings, testing=False):
     settings.ADMIN_USERNAME = config.get('db', 'ADMIN_USERNAME')
     settings.ADMIN_PASSWORD = config.get('db', 'ADMIN_PASSWORD')
     settings.SECRET_KEY = config.get('flask', 'SECRET_KEY')
+
     settings.JWT_SECRET_KEY = config.get('jwt', 'JWT_SECRET_KEY')
     settings.JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(
         seconds=config.getint('jwt', 'JWT_ACCESS_TOKEN_EXPIRE_SECONDS'))
@@ -42,3 +43,9 @@ def load_config(settings, testing=False):
         hours=config.getfloat('jwt', 'JWT_REFRESH_TOKEN_EXPIRE_HOURS'))
     settings.JWT_COOKIE_SECURE = config.getboolean('jwt', 'JWT_COOKIE_SECURE')
     settings.JWT_TOKEN_LOCATION = config.get('jwt', 'JWT_TOKEN_LOCATION').split(',')
+
+    settings.APNS_KEY_PATH = config.get('apns', 'APNS_KEY_PATH')
+    settings.APNS_KEY_ID = config.get('apns', 'APNS_KEY_ID')
+    settings.APNS_TEAM_ID = config.get('apns', 'APNS_TEAM_ID')
+    settings.APNS_TOPIC = config.get('apns', 'APNS_TOPIC')
+    settings.APNS_USE_SANDBOX = config.getboolean('apns', 'APNS_USE_SANDBOX')

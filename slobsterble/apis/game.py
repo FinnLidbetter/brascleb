@@ -15,6 +15,7 @@ from slobsterble.game_play_controller import (
     fetch_game_state,
     get_game_player,
 )
+from slobsterble.notifications.notify import notify_next_player
 
 
 class GameView(Resource):
@@ -97,7 +98,9 @@ class GameView(Resource):
                 data=data, game_state=game_state, game_player=game_player,
                 turn_score=turn_score, primary_word=primary_word,
                 secondary_words=secondary_words)
-            state_updater.update_state()
+            game_over = state_updater.update_state()
+            if not game_over:
+                notify_next_player(game_id)
             return Response('Turn played successfully.', status=200)
         except slobsterble.api_exceptions.BaseApiException as play_error:
             return Response(str(play_error), status=play_error.status_code)

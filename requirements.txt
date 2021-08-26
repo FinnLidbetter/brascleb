@@ -9,6 +9,7 @@ Flask-SQLAlchemy==2.5.1
 Flask-WTF==0.14.3
 gunicorn==20.1.0
 jsonschema==3.2.0
+git+git://github.com/Pr0Ger/PyAPNs2@5e4a938cd2e24249f6345aac27ba783defa5a63f#egg=apns2
 WTForms==2.3.1
 
 # Code quality
