@@ -1,6 +1,7 @@
 """Initialise the Flask app."""
 import logging
 import os
+import sys
 
 from flask import Flask, Response
 from flask_admin import Admin
@@ -22,6 +23,10 @@ migrate = Migrate()
 api = Api()
 jwt = JWTManager()
 apns = APNSManager()
+logger = logging.getLogger('slobsterble')
+
+
+LOG_FORMAT = '[%(asctime)s][%(levelname)s][PID-%(process)d][%(threadName)s] %(message)s'
 
 
 def init_db(app):
@@ -160,11 +165,15 @@ def init_login(app):
 
 
 def init_notifications(app):
-    apns.init_app(app)
+    apns.init_app(app, db)
 
 
-def init_logging():
-    logging.basicConfig()
+def init_logging(app):
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(app.config['LOG_LEVEL'])
 
 
 def create_app():
@@ -172,6 +181,7 @@ def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(slobsterble.settings)
 
+    init_logging(app)
     init_db(app)
     init_migrate(app)
     init_jwt(app)
@@ -179,6 +189,5 @@ def create_app():
     init_api(app)
     init_admin(app)
     init_notifications(app)
-    init_logging()
 
     return app

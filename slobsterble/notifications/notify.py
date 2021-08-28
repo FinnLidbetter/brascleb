@@ -5,10 +5,6 @@ from slobsterble.models import Device, Game, GamePlayer
 from slobsterble.notifications.notification_factory import NotificationFactory
 
 
-def handle_unsuccessful_notification(device_token, result):
-    pass
-
-
 def notify_next_player(game_id):
     """Notify the next player in the game that it is their turn."""
     game_players_query = db.session.query(Game).filter(
@@ -25,11 +21,7 @@ def notify_next_player(game_id):
     for player_device in player_devices:
         notification_requests.append(
             NotificationFactory.make_next_turn_notification(player_device.device_token, game_id))
-    results = apns.client.send_notification_batch(
-        notifications=notification_requests, topic=apns.topic)
-    for device_token, result in results.items():
-        if result != 'Success':
-            handle_unsuccessful_notification(device_token, result)
+    apns.notify(notification_requests)
 
 
 def notify_new_game(game_id, game_players, creator_player):
@@ -49,9 +41,4 @@ def notify_new_game(game_id, game_players, creator_player):
                     your_turn=game_player.turn_order == 0
                 )
             )
-    results = apns.client.send_notification_batch(
-        notifications=notification_requests, topic=apns.topic
-    )
-    for device_token, result in results.items():
-        if result != 'Success':
-            handle_unsuccessful_notification(device_token, result)
+        apns.notify(notification_requests)

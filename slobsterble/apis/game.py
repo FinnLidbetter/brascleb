@@ -6,6 +6,7 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, current_user
 
 import slobsterble.api_exceptions
+from slobsterble.app import db
 from slobsterble.game_play_controller import (
     StatelessValidator,
     StatefulValidator,
@@ -15,6 +16,7 @@ from slobsterble.game_play_controller import (
     fetch_game_state,
     get_game_player,
 )
+from slobsterble.models import Move
 from slobsterble.notifications.notify import notify_next_player
 
 
@@ -68,6 +70,26 @@ class GameView(Resource):
             override_mask={'GamePlayer': ['rack'],
                            'TileCount': ['tile', 'count'],
                            'Tile': ['letter', 'is_blank', 'value']})
+        if game_state.turn_number > 0:
+            prev_turn_order = (game_state.turn_number - 1) % len(game_state.game_players)
+            prev_play_player = game_state.game_players[0]
+            for game_player in game_state.game_players:
+                if game_player.turn_order == prev_turn_order:
+                    prev_play_player = game_player
+                    break
+            prev_move = db.session.query(Move).filter(
+                Move.game_player_id == prev_play_player.id,
+                Move.turn_number == game_state.turn_number - 1).one()
+            serialized_prev_move = {
+                'word': prev_move.primary_word,
+                'score': prev_move.score,
+                'player_id': prev_play_player.player_id,
+                'display_name': prev_play_player.player.display_name,
+                'exchanged_count': len(prev_move.exchanged_tiles)
+            }
+            serialized_game_state['prev_move'] = serialized_prev_move
+        else:
+            serialized_game_state['prev_move'] = None
         serialized_game_state['rack'] = serialized_user_rack['rack']
         return jsonify(serialized_game_state)
 
