@@ -9,7 +9,7 @@ class NotificationFactory:
     def make_next_turn_notification(device_token, game_id):
         """Create a Notification object for a next turn."""
         payload = Payload(
-            alert='It is your turn to play next!',
+            alert='It is your turn to play!',
             badge=1,
             custom={'game_id': str(game_id)}
         )
