@@ -22,5 +22,8 @@ class StatsView(Resource):
             'wins': current_player.wins,
             'losses': current_player.losses,
             'ties': current_player.ties,
+            'best_individual_game_score': current_player.highest_individual_score,
+            'best_combined_game_score': current_player.highest_combined_score,
+            'best_word_score': current_player.best_word_score,
         }
         return jsonify(data)
