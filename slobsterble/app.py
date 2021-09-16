@@ -112,6 +112,7 @@ def init_api(app):
         NewGameView,
         PlayerSettingsView,
         RegisterView,
+        StatsView,
         TileDistributionView,
         TokenRefreshView,
         WebsiteRegisterView,
@@ -133,6 +134,7 @@ def init_api(app):
     api.add_resource(FriendsView, '/api/friends')
     api.add_resource(PlayerSettingsView, '/api/player-settings')
     api.add_resource(DictionaryView, '/api/game/<int:game_id>/verify-word/<string:word>')
+    api.add_resource(StatsView, '/api/stats')
     api.init_app(app)
 
 

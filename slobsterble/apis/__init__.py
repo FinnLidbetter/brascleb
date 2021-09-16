@@ -19,6 +19,7 @@ from slobsterble.apis.list_games import ListGamesView
 from slobsterble.apis.move_history import MoveHistoryView
 from slobsterble.apis.new_game import NewGameView
 from slobsterble.apis.player_settings import PlayerSettingsView
+from slobsterble.apis.stats import StatsView
 from slobsterble.apis.tile_distribution import TileDistributionView
 
 
@@ -38,6 +39,7 @@ __all__ = [
     'PlayerSettingsView',
     'RegisterView',
     'SlobsterbleModelView',
+    'StatsView',
     'TileDistributionView',
     'TokenRefreshView',
     'WebsiteRegisterView',
