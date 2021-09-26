@@ -53,7 +53,7 @@ class GameView(Resource):
                                     'turn_number',
                                     'whose_turn_name', 'num_tiles_remaining',
                                     'board_layout'],
-                           'GamePlayer': ['score', 'player', 'turn_order'],
+                           'GamePlayer': ['score', 'player', 'turn_order', 'num_tiles_remaining'],
                            'Player': ['id', 'display_name'],
                            'PlayedTile': ['tile', 'row', 'column'],
                            'Tile': ['letter', 'is_blank', 'value'],
@@ -91,6 +91,7 @@ class GameView(Resource):
         else:
             serialized_game_state['prev_move'] = None
         serialized_game_state['rack'] = serialized_user_rack['rack']
+        serialized_game_state['fetcher_player_id'] = current_game_player.player_id
         return jsonify(serialized_game_state)
 
     @staticmethod

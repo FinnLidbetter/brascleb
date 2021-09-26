@@ -82,6 +82,13 @@ class GamePlayer(db.Model, ModelMixin, ModelSerializer):
                                'turn.')
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
 
+    @property
+    def num_tiles_remaining(self):
+        tile_total = 0
+        for tile_count in self.rack:
+            tile_total += tile_count.count
+        return tile_total
+
     def __repr__(self):
         return '(%s) %s: %d' % (self.game, self.player, self.score)
 
