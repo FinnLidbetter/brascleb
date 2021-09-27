@@ -80,12 +80,13 @@ class GameView(Resource):
             prev_move = db.session.query(Move).filter(
                 Move.game_player_id == prev_play_player.id,
                 Move.turn_number == game_state.turn_number - 1).one()
+            exchanged_count = sum(tile_count.count for tile_count in prev_move.exchanged_tiles)
             serialized_prev_move = {
                 'word': prev_move.primary_word,
                 'score': prev_move.score,
                 'player_id': prev_play_player.player_id,
                 'display_name': prev_play_player.player.display_name,
-                'exchanged_count': len(prev_move.exchanged_tiles)
+                'exchanged_count': exchanged_count
             }
             serialized_game_state['prev_move'] = serialized_prev_move
         else:
