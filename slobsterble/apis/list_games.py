@@ -30,8 +30,8 @@ class ListGamesView(Resource):
             Player.user_id == current_user.id
         ).order_by(
             case(
-                [(Game.completed.is_(None), 1)],
-                else_=0
+                [(Game.completed.is_(None), 0)],
+                else_=1
             ),
             Game.completed.desc(),
             Game.started.desc()
