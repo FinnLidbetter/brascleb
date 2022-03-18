@@ -1,9 +1,10 @@
 """Management for the APNs client."""
 
-from apns2.client import APNsClient
-from apns2.credentials import CertificateCredentials, TokenCredentials
 from flask import current_app
 
+from slobsterble.notifications.apns_client import APNsClient
+from slobsterble.notifications.apns_credentials import TokenCredentials
+from slobsterble.notifications.apns_exceptions import APNSDeviceException
 from slobsterble.notifications.config import config
 
 
@@ -24,17 +25,14 @@ class APNSManager:
         app.extensions['flask-apns'] = self
         self.db = db
         self._set_default_configuration_options(app)
-        if app.config.get('APNS_CERT_FILE_PATH') is not None:
-            self._credentials = CertificateCredentials(app.config['APNS_CERT_FILE_PATH'])
-        else:
-            self._credentials = TokenCredentials(
-                auth_key_path=app.config['APNS_KEY_PATH'],
-                auth_key_id=app.config['APNS_KEY_ID'],
-                team_id=app.config['APNS_TEAM_ID'])
+        self._credentials = TokenCredentials(
+            auth_key_path=app.config['APNS_KEY_PATH'],
+            auth_key_id=app.config['APNS_KEY_ID'],
+            team_id=app.config['APNS_TEAM_ID'])
         self.client = APNsClient(
             credentials=self._credentials,
             use_sandbox=app.config['APNS_USE_SANDBOX'],
-            heartbeat_period=app.config['APNS_HEARTBEAT_SECONDS']
+            notification_retries=app.config['APNS_NOTIFICATION_RETRIES_MAX']
         )
 
     @staticmethod
@@ -51,34 +49,18 @@ class APNSManager:
     def refresh_client(self):
         """Reset the client."""
         current_app.logger.info('Refreshing APNs client.')
-        self.client = APNsClient(
-            credentials=self._credentials,
-            use_sandbox=config.use_sandbox,
-            heartbeat_period=config.heartbeat_seconds,
-        )
+        self.client.reset_connection()
 
-    def handle_unsuccessful_notification(self, device_token, result):
-        if result == 'Unregistered' or (isinstance(result, tuple) and result[0] == 'Unregistered'):
-            current_app.logger.info('Removing unregistered device %s.', device_token)
-            unregistered_devices = self.db.session.query('Device').filter_by(
-                device_token=device_token).all()
-            self.db.session.remove(unregistered_devices)
-            self.db.session.commit()
+    def handle_unregistered_device(self, device_token):
+        current_app.logger.info('Removing unregistered device %s.', device_token)
+        unregistered_devices = self.db.session.query('Device').filter_by(
+            device_token=device_token).all()
+        self.db.session.remove(unregistered_devices)
+        self.db.session.commit()
 
     def notify(self, notifications):
-        retries = 0
-        should_retry = True
-        while should_retry and retries < config.notification_retries_max:
-            retries += 1
-            should_retry = False
+        for notification in notifications:
             try:
-                results = self.client.send_notification_batch(
-                    notifications=notifications, topic=config.topic
-                )
-                for device_token, result in results.items():
-                    if result != 'Success':
-                        self.handle_unsuccessful_notification(device_token, result)
-            except (ConnectionResetError, BrokenPipeError) as exc:
-                current_app.logger.warning('Could not reach APNs due to: %s.', str(exc))
-                self.refresh_client()
-                should_retry = True
+                self.client.send_notification(notification, topic=config.topic)
+            except APNSDeviceException:
+                self.handle_unregistered_device(notification.token)

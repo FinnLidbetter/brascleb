@@ -1,5 +1,5 @@
-from apns2.payload import Payload
-from apns2.client import Notification
+from slobsterble.notifications.apns_payload import Payload
+from slobsterble.notifications.apns_client import Notification
 
 
 class NotificationFactory:

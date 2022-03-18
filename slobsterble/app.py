@@ -155,6 +155,10 @@ def init_jwt(app):
     def unauthorized_access_callback(error_string):
         return Response(error_string, status=401)
 
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error_string):
+        return Response(error_string, status=401)
+
 
 def init_login(app):
     """Initialize the login manager for session-based authentication."""
