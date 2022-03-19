@@ -64,11 +64,13 @@ class APNsClient:
     @property
     def _connection(self):
         if self._client is None:
+            logger.info("Connecting to APNS server at %s", self.base_url)
             self._client = httpx.Client(base_url=self.base_url, http2=True, limits=self.LIMITS, timeout=10.0)
         return self._client
 
     def _reset_connection(self):
         if self._client is not None:
+            logger.info("Closing connection to APNS server.")
             self._client.close()
         self._client = None
 
