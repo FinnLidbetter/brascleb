@@ -41,6 +41,7 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
     serialize_exclude_fields = ['password_hash', 'player']
 
     activated = db.Column(db.Boolean, nullable=False, default=False)
+    verified = db.Column(db.Boolean, nullable=False, default=False)
     username = db.Column(db.String(255, collation='NOCASE'),
                          unique=True,
                          nullable=False)
@@ -59,6 +60,30 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
 
     def __repr__(self):
         return self.username
+
+
+class UserVerification(db.Model, ModelMixin, ModelSerializer):
+    """Model to track and manage email verification and password resets."""
+    __tablename__ = 'user_verification'
+
+    username = db.Column(
+        db.String(255, collation='NOCASE'), nullable=False,
+        doc='The username of the associated user.'
+    )
+    token_hash = db.Column(
+        db.String(255),
+        nullable=False,
+        doc='The hash of the token sent to the user in the reset link.'
+    )
+    expiration_timestamp = db.Column(
+        db.Integer, nullable=False,
+        doc='The expiration timestamp for the verification link.'
+    )
+    used = db.Column(
+        db.Boolean, nullable=False,
+        doc='Value to indicate whether or not the corresponding token has '
+            'been used.'
+    )
 
 
 def random_friend_key():
