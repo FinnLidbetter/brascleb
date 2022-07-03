@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+import sqlalchemy.exc
 from flask import Flask, Response
 from flask_admin import Admin
 from flask_login import LoginManager
@@ -35,16 +36,20 @@ def init_db(app):
     from slobsterble.models import User
     with app.app_context():
         if inspect(db.engine).has_table('User'):
-            admin_user_exists = User.query.filter_by(
-                username=app.config['ADMIN_USERNAME']).one_or_none() is not None
-            if not admin_user_exists:
-                admin_user = User(
-                    username=app.config['ADMIN_USERNAME'],
-                    password_hash=generate_password_hash(
-                        app.config['ADMIN_PASSWORD']),
-                    activated=True)
-                db.session.add(admin_user)
-                db.session.commit()
+            try:
+                admin_user_exists = User.query.filter_by(
+                    username=app.config['ADMIN_USERNAME']).one_or_none() is not None
+                if not admin_user_exists:
+                    admin_user = User(
+                        username=app.config['ADMIN_USERNAME'],
+                        password_hash=generate_password_hash(
+                            app.config['ADMIN_PASSWORD']),
+                        activated=True)
+                    db.session.add(admin_user)
+                    db.session.commit()
+            except sqlalchemy.exc.OperationalError as err:
+                if 'no such column: user.verified' not in str(err):
+                    raise
 
 
 def init_migrate(app):
