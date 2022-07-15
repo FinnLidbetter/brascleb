@@ -52,3 +52,9 @@ def load_config(settings, testing=False):
     settings.APNS_HEARTBEAT_SECONDS = config.getint('apns', 'APNS_HEARTBEAT_SECONDS')
     settings.APNS_NOTIFICATION_RETRIES_MAX = config.getint('apns', 'APNS_NOTIFICATION_RETRIES_MAX')
     settings.APNS_USE_SANDBOX = config.getboolean('apns', 'APNS_USE_SANDBOX')
+
+    settings.MAIL_SERVER = config.get('mail', 'MAIL_SERVER')
+    settings.MAIL_PORT = config.get('mail', 'MAIL_PORT')
+    settings.MAIL_USERNAME = config.get('mail', 'MAIL_USERNAME')
+    settings.MAIL_PASSWORD = config.get('mail', 'MAIL_PASSWORD')
+    settings.MAIL_USE_TLS = config.get('mail', 'MAIL_USE_TLS')
