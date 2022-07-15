@@ -7,6 +7,7 @@ import sqlalchemy.exc
 from flask import Flask, Response
 from flask_admin import Admin
 from flask_login import LoginManager
+from flask_mailman import Mail
 from flask_migrate import Migrate
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
@@ -20,6 +21,7 @@ from slobsterble.notifications import APNSManager
 db = SQLAlchemy()
 admin = Admin()
 login_manager = LoginManager()
+mail = Mail()
 migrate = Migrate()
 api = Api()
 jwt = JWTManager()
@@ -175,6 +177,10 @@ def init_login(app):
         return User.query.get(int(user_id))
 
 
+def init_mail(app):
+    mail.init_app(app)
+
+
 def init_notifications(app):
     apns.init_app(app, db)
 
@@ -200,5 +206,6 @@ def create_app():
     init_api(app)
     init_admin(app)
     init_notifications(app)
+    init_mail(app)
 
     return app
