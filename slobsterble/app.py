@@ -100,6 +100,8 @@ def init_admin(app):
         SlobsterbleModelView(slobsterble.models.Player, db.session))
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.User, db.session))
+    admin.add_view(
+        SlobsterbleModelView(slobsterble.models.UserVerification, db.session))
     admin.init_app(app)
 
 
@@ -109,6 +111,7 @@ def init_api(app):
         AdminLogoutView,
         BoardLayoutView,
         DictionaryView,
+        EmailVerificationView,
         FriendsView,
         GameView,
         IndexView,
@@ -117,8 +120,10 @@ def init_api(app):
         LogoutView,
         MoveHistoryView,
         NewGameView,
+        PasswordResetView,
         PlayerSettingsView,
         RegisterView,
+        RequestPasswordResetView,
         StatsView,
         TileDistributionView,
         TokenRefreshView,
@@ -129,7 +134,10 @@ def init_api(app):
     api.add_resource(AdminLogoutView, '/admin-logout')
     api.add_resource(TokenRefreshView, '/api/refresh-access')
     api.add_resource(WebsiteRegisterView, '/site-register')
+    api.add_resource(PasswordResetView, '/reset-password')
+    api.add_resource(RequestPasswordResetView, '/api/request-password-reset/<string:username>')
     api.add_resource(RegisterView, '/api/register')
+    api.add_resource(EmailVerificationView, '/api/verify')
     api.add_resource(LoginView, '/api/login')
     api.add_resource(LogoutView, '/api/logout')
     api.add_resource(BoardLayoutView, '/api/board-layout')

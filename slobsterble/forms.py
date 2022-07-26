@@ -24,3 +24,13 @@ class RegisterForm(FlaskForm):
                                      validators=[DataRequired()])
     display_name = StringField('Display name', validators=[DataRequired()])
     submit = SubmitField('Register')
+
+
+class PasswordResetForm(FlaskForm):
+    """Basic form for resetting the password for a user."""
+
+    username = StringField('Username', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired()])
+    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired()])
+    token = StringField('Token', validators=[DataRequired()])
+    submit = SubmitField('Reset Password')
