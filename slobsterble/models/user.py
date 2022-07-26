@@ -66,6 +66,8 @@ class UserVerification(db.Model, ModelMixin, ModelSerializer):
     """Model to track and manage email verification and password resets."""
     __tablename__ = 'user_verification'
 
+    serialize_exclude_fields = ['token_hash']
+
     username = db.Column(
         db.String(255, collation='NOCASE'), nullable=False,
         doc='The username of the associated user.'

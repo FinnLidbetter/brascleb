@@ -58,3 +58,8 @@ def load_config(settings, testing=False):
     settings.MAIL_USERNAME = config.get('mail', 'MAIL_USERNAME')
     settings.MAIL_PASSWORD = config.get('mail', 'MAIL_PASSWORD')
     settings.MAIL_USE_TLS = config.get('mail', 'MAIL_USE_TLS')
+
+    settings.WEB_PROTOCOL = config.get('web', 'PROTOCOL', fallback='https')
+    settings.WEB_HOST = config.get('web', 'HOST', fallback='slobsterble.finnlidbetter.com')
+    settings.WEB_PORT = config.get('web', 'PORT', fallback='443')
+    settings.ROOT_URL = f'{settings.WEB_PROTOCOL}://{settings.WEB_HOST}:{settings.WEB_PORT}'

@@ -33,6 +33,7 @@ def upgrade():
               nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('username', sa.String(length=256, collation='NOCASE'), nullable=False),
+    sa.Column('token_hash', sa.String(length=256), nullable=False),
     sa.Column('expiration_timestamp', sa.Integer(), nullable=False),
     sa.Column('used', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
