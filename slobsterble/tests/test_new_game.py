@@ -138,7 +138,7 @@ def test_valid_post(client, db, alice_bob_mutual_friends, alice_headers):
     alice_player, bob_player = alice_bob_mutual_friends
     resp = client.post('/api/new-game', json=[bob_player.id], headers=alice_headers)
     assert resp.status_code == 200
-    assert resp.get_data(as_text=True) == 'New game created successfully.'
+    assert resp.get_data(as_text=True) == '1'
     # Cleanup by deleting the game that we just created.
     created_game = db.session.query(Game).order_by(Game.created.desc()).first()
     db.session.delete(created_game)
