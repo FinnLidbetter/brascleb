@@ -446,9 +446,13 @@ def send_verification_email(email_address, token):
     verification_link = f'{current_app.config["ROOT_URL"]}{path}?{query}'
     message = \
         f'''
-        Welcome to ReRack. Please follow the link to complete your account registration.\n\n
+        Welcome to ReRack. Please follow the link to complete your account registration.
+        
         {verification_link} \n\n
+        
         If you did not register an account with ReRack, then please disregard this email.
+        
+        Do not reply to this email.
         '''
     try:
         mail.send_mail(
@@ -469,10 +473,13 @@ def send_password_reset_email(email_address, token):
     password_reset_link = f'{current_app.config["ROOT_URL"]}{path}?{query}'
     message = \
         f'''
-        Password reset requested for ReRack user {email_address}. Please follow the link to reset your 
-        password.\n\n
-        {password_reset_link}\n\n
+        Password reset requested for ReRack user {email_address}. Please follow the link to reset your password.
+        
+        {password_reset_link}
+        
         If you did not request a password reset, then please disregard this email.
+        
+        Do not reply to this email.
         '''
     try:
         mail.send_mail(
