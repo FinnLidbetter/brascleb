@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Verify Email{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <label for="username">Username</label>
+        <input name="username" id="username" value={{ form.username.data }} required>
+        <input type="hidden" name="token" id="token" value={{ form.token.data }} required>
+        <input type="submit" value="Verify Email">
+    </form>
+{% endblock %}

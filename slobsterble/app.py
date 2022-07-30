@@ -137,7 +137,7 @@ def init_api(app):
     api.add_resource(WebsiteRegisterView, '/site-register')
     api.add_resource(PasswordResetView, '/reset-password')
     api.add_resource(RequestVerificationEmailView, '/api/send-verification-email')
-    api.add_resource(RequestPasswordResetView, '/api/request-password-reset/<string:username>')
+    api.add_resource(RequestPasswordResetView, '/api/request-password-reset')
     api.add_resource(RegisterView, '/api/register')
     api.add_resource(EmailVerificationView, '/api/verify')
     api.add_resource(LoginView, '/api/login')

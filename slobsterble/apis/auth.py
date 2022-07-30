@@ -45,7 +45,7 @@ from slobsterble.models import (
     User,
     UserVerification,
 )
-from slobsterble.forms import LoginForm, PasswordResetForm, RegisterForm
+from slobsterble.forms import LoginForm, PasswordResetForm, RegisterForm, VerifyEmailForm
 
 
 class TokenRefreshView(Resource):
@@ -249,10 +249,24 @@ class RegisterView(Resource):
 class EmailVerificationView(Resource):
 
     @staticmethod
+    def get():
+        raw_username = request.args.get('username')
+        raw_token = request.args.get('token')
+        if raw_username is not None and raw_token is not None:
+            username = urllib.parse.unquote(raw_username)
+            token = urllib.parse.unquote(raw_token)
+            form_data = MultiDict([('username', username), ('token', token)])
+            form = VerifyEmailForm(formdata=form_data)
+            return Response(render_template('auth/verify_email.html', title='Verify Email', form=form), status=200)
+        return Response('Unexpected parameters.', status=400)
+
+    @staticmethod
     def post():
-        data = request.get_json()
-        username = data.get('username')
-        token = data.get('token')
+        form = VerifyEmailForm()
+        if not form.validate_on_submit():
+            return Response('Invalid form submission', status=400)
+        username = form.username.data
+        token = form.token.data
         if not username or not token:
             return Response('Verification failed. Missing username or token.', status=400)
         if ' ' in username:
@@ -261,24 +275,23 @@ class EmailVerificationView(Resource):
             return Response(f'{username} is not a valid email address for use with ReRack', status=400)
         if not re.fullmatch(r'[0-9A-Za-z_\-]+', token):
             return Response(f'Invalid token', status=400)
-        token_hash = generate_password_hash(token)
-        verification_record = db.session.query(UserVerification).filter_by(
-            username=username, token_hash=token_hash,
-        ).one_or_none()
-        if verification_record is None:
-            return Response('Verification failed.', status=400)
-        if verification_record.used:
-            return Response('This verification link has been used already.', status=400)
-        now = int(time.time())
-        if now > verification_record.expiration_timestamp:
-            return Response(
-                'Verification link has expired. '
-                'Please request a new verification link.',
-                status=400
-            )
         user = db.session.query(User).filter_by(username=username).one_or_none()
         if user is None:
             return Response('Verification failed. User not found.', status=400)
+        if user.verified:
+            return Response('The user is already verified.', status=400)
+
+        now = int(time.time())
+        active_records = db.session.query(UserVerification).filter_by(
+            username=username, used=False,
+        ).filter(UserVerification.expiration_timestamp > now).all()
+        verification_record = None
+        for record in active_records:
+            if check_password_hash(record.token_hash, token):
+                verification_record = record
+                break
+        if verification_record is None:
+            return Response('Verification failed. Please request a new verification link.', status=400)
         user.verified = True
         verification_record.used = True
         db.session.commit()
@@ -382,7 +395,11 @@ class PasswordResetView(Resource):
 class RequestPasswordResetView(Resource):
 
     @staticmethod
-    def post(username):
+    def post():
+        data = request.get_json()
+        username = data.get('username')
+        if username is None:
+            return Response('Error. Username missing from request.', status=400)
         now = int(time.time())
         user = db.session.query(User).filter_by(username=username).one_or_none()
         if user is None:

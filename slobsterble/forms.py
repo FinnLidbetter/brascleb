@@ -26,6 +26,13 @@ class RegisterForm(FlaskForm):
     submit = SubmitField('Register')
 
 
+class VerifyEmailForm(FlaskForm):
+    """Basic form for verifying the email address for a user."""
+    username = StringField('Username', validators=[DataRequired()])
+    token = StringField('Token', validators=[DataRequired()])
+    submit = SubmitField('Verify Email')
+
+
 class PasswordResetForm(FlaskForm):
     """Basic form for resetting the password for a user."""
 
