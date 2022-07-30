@@ -80,6 +80,8 @@ class LoginView(Resource):
         user = User.query.filter_by(username=username).one_or_none()
         if not user or not user.check_password(password):
             return Response('Incorrect username or password', status=401)
+        if not user.verified:
+            return Response('Account is not verified', status=401)
 
         now = datetime.datetime.now(datetime.timezone.utc)
         access_token = create_access_token(identity=user, fresh=True)
@@ -286,10 +288,13 @@ class EmailVerificationView(Resource):
 class RequestVerificationEmailView(Resource):
 
     @staticmethod
-    @jwt_required()
     def post():
-        username = current_user.username
-        if current_user.verified:
+        data = request.get_json()
+        username = data.get('username')
+        user = db.session.query(User).filter_by(username=username).one_or_none()
+        if user is None:
+            return Response(f"User '{username}' does not exist. Please register an account.", status=404)
+        if user.verified:
             return Response('User is already verified', status=403)
         now = int(time.time())
         active_records = db.session.query(UserVerification).filter_by(
