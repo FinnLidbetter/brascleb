@@ -291,6 +291,8 @@ class RequestVerificationEmailView(Resource):
     def post():
         data = request.get_json()
         username = data.get('username')
+        if not _is_plausible_email(username):
+            return Response('Username must be a valid email address.', status=400)
         user = db.session.query(User).filter_by(username=username).one_or_none()
         if user is None:
             return Response(f"User '{username}' does not exist. Please register an account.", status=404)
@@ -334,7 +336,6 @@ class PasswordResetView(Resource):
             username = urllib.parse.unquote(raw_username)
             token = urllib.parse.unquote(raw_token)
             form_data = MultiDict([('username', username), ('token', token)])
-            print(form_data)
             form = PasswordResetForm(formdata=form_data)
             return Response(render_template('auth/reset_password.html', title='Reset Password', form=form), status=200)
         return Response('Unexpected parameters.', status=400)
