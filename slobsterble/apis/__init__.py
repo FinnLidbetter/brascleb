@@ -18,6 +18,7 @@ from slobsterble.apis.board_layout import BoardLayoutView
 from slobsterble.apis.dictionary import DictionaryView
 from slobsterble.apis.friends import FriendsView
 from slobsterble.apis.game import GameView
+from slobsterble.apis.head_to_head import HeadToHeadView
 from slobsterble.apis.index import IndexView
 from slobsterble.apis.list_games import ListGamesView
 from slobsterble.apis.move_history import MoveHistoryView
@@ -35,6 +36,7 @@ __all__ = [
     'EmailVerificationView',
     'FriendsView',
     'GameView',
+    'HeadToHeadView',
     'IndexView',
     'ListGamesView',
     'LoginView',

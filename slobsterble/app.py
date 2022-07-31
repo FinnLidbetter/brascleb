@@ -115,6 +115,7 @@ def init_api(app):
         FriendsView,
         GameView,
         IndexView,
+        HeadToHeadView,
         ListGamesView,
         LoginView,
         LogoutView,
@@ -148,6 +149,7 @@ def init_api(app):
     api.add_resource(ListGamesView, '/api/games')
     api.add_resource(GameView, '/api/game/<int:game_id>')
     api.add_resource(MoveHistoryView, '/api/game/<int:game_id>/move-history')
+    api.add_resource(HeadToHeadView, '/api/head-to-head/<int:other_player_id>')
     api.add_resource(FriendsView, '/api/friends')
     api.add_resource(PlayerSettingsView, '/api/player-settings')
     api.add_resource(DictionaryView, '/api/game/<int:game_id>/verify-word/<string:word>')
