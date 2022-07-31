@@ -15,7 +15,7 @@ from slobsterble.apis.auth import (
     WebsiteRegisterView,
 )
 from slobsterble.apis.board_layout import BoardLayoutView
-from slobsterble.apis.dictionary import DictionaryView
+from slobsterble.apis.dictionary import DictionaryView, TwoLetterWordView
 from slobsterble.apis.friends import FriendsView
 from slobsterble.apis.game import GameView
 from slobsterble.apis.head_to_head import HeadToHeadView
@@ -52,6 +52,7 @@ __all__ = [
     'StatsView',
     'TileDistributionView',
     'TokenRefreshView',
+    'TwoLetterWordView',
     'WebsiteRegisterView',
 ]
 

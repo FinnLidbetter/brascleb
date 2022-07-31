@@ -129,6 +129,7 @@ def init_api(app):
         StatsView,
         TileDistributionView,
         TokenRefreshView,
+        TwoLetterWordView,
         WebsiteRegisterView,
     )
     api.add_resource(IndexView, '/', '/index')
@@ -153,6 +154,7 @@ def init_api(app):
     api.add_resource(FriendsView, '/api/friends')
     api.add_resource(PlayerSettingsView, '/api/player-settings')
     api.add_resource(DictionaryView, '/api/game/<int:game_id>/verify-word/<string:word>')
+    api.add_resource(TwoLetterWordView, '/api/game/<int:game_id>/two-letter-words')
     api.add_resource(StatsView, '/api/stats')
     api.init_app(app)
 

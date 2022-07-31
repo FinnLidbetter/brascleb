@@ -1,11 +1,49 @@
 """API for checking words in the dictionary."""
 
-from flask import jsonify, Response
+from collections import defaultdict
+
+from flask import jsonify, request, Response
 from flask_jwt_extended import jwt_required, current_user
 from flask_restful import Resource
+from sqlalchemy.sql.expression import func
 
 from slobsterble.app import db
 from slobsterble.models import Dictionary, Entry, Game, GamePlayer, Player
+
+
+class TwoLetterWordView(Resource):
+    """Get a list of two letter words."""
+
+    two_letter_words = defaultdict(list)
+
+    @classmethod
+    @jwt_required()
+    def get(cls, game_id):
+        """"""
+        refresh = request.args.get('refresh')
+        accessible_game = db.session.query(Game).filter(
+            Game.id == game_id
+        ).join(
+            Game.game_players,
+            GamePlayer.player,
+        ).filter(Player.user_id == current_user.id).one_or_none()
+        if not accessible_game:
+            return Response(status=401)
+        dictionary_id = accessible_game.dictionary_id
+        if dictionary_id in cls.two_letter_words and not refresh:
+            return jsonify(cls.two_letter_words[dictionary_id])
+        two_letter_words = db.session.query(Dictionary).filter(
+            Dictionary.id == dictionary_id
+        ).join(
+            Dictionary.entries
+        ).filter(
+            func.length(Entry.word) == 2
+        ).order_by(
+            Entry.word
+        ).one()
+        words = [entry.word for entry in two_letter_words.entries if len(entry.word) == 2]
+        cls.two_letter_words[dictionary_id] = words
+        return jsonify(words)
 
 
 class DictionaryView(Resource):
