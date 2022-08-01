@@ -19,7 +19,7 @@ class TwoLetterWordView(Resource):
     @classmethod
     @jwt_required()
     def get(cls, game_id):
-        """"""
+        """Get a list of all two letter words for the dictionary in a game."""
         refresh = request.args.get('refresh')
         accessible_game = db.session.query(Game).filter(
             Game.id == game_id
