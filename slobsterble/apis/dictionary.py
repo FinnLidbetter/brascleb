@@ -6,6 +6,7 @@ from flask import jsonify, request, Response
 from flask_jwt_extended import jwt_required, current_user
 from flask_restful import Resource
 from sqlalchemy.sql.expression import func
+from sqlalchemy.orm import joinedload
 
 from slobsterble.app import db
 from slobsterble.models import Dictionary, Entry, Game, GamePlayer, Player
@@ -26,21 +27,22 @@ class TwoLetterWordView(Resource):
         ).join(
             Game.game_players,
             GamePlayer.player,
-        ).filter(Player.user_id == current_user.id).one_or_none()
+        ).filter(Player.user_id == 2).one_or_none()
         if not accessible_game:
             return Response(status=401)
         dictionary_id = accessible_game.dictionary_id
         if dictionary_id in cls.two_letter_words and not refresh:
             return jsonify(cls.two_letter_words[dictionary_id])
-        two_letter_words = db.session.query(Dictionary).filter(
+        query = db.session.query(Dictionary, Entry).filter(
             Dictionary.id == dictionary_id
         ).join(
             Dictionary.entries
         ).filter(
             func.length(Entry.word) == 2
-        ).order_by(
+        ).options(joinedload(Entry.word)).order_by(
             Entry.word
-        ).one()
+        )
+        two_letter_words = query.one()
         words = [entry.word for entry in two_letter_words.entries if len(entry.word) == 2]
         cls.two_letter_words[dictionary_id] = words
         return jsonify(words)
