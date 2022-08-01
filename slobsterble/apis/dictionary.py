@@ -39,7 +39,7 @@ class TwoLetterWordView(Resource):
             Dictionary.entries
         ).filter(
             func.length(Entry.word) == 2
-        ).options(joinedload(Entry.word)).order_by(
+        ).order_by(
             Entry.word
         )
         two_letter_words = query.one()
