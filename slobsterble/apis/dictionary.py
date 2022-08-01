@@ -42,8 +42,8 @@ class TwoLetterWordView(Resource):
         ).order_by(
             Entry.word
         )
-        two_letter_words = query.one()
-        words = [entry.word for entry in two_letter_words.entries if len(entry.word) == 2]
+        two_letter_words = query.all()
+        words = [entry.word for entry in two_letter_words]
         cls.two_letter_words[dictionary_id] = words
         return jsonify(words)
 
