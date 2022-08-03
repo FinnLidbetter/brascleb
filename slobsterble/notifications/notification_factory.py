@@ -6,10 +6,16 @@ class NotificationFactory:
     """Manager for creating notification requests."""
 
     @staticmethod
-    def make_next_turn_notification(device_token, game_id):
+    def make_next_turn_notification(device_token, game_id, other_player_names):
         """Create a Notification object for a next turn."""
+        if len(other_player_names) == 1:
+            other_players_string = other_player_names[0]
+        elif len(other_player_names) == 2:
+            other_players_string = f'{other_player_names[0]} and {other_player_names[1]}'
+        else:
+            other_players_string = f'{other_player_names[:-1].join(", ")}, and {other_player_names[-1]}'
         payload = Payload(
-            alert='It is your turn to play!',
+            alert=f'It is your turn to play against {other_players_string}!',
             badge=1,
             custom={'game_id': str(game_id)}
         )

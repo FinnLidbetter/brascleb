@@ -11,16 +11,21 @@ def notify_next_player(game_id):
         Game.id == game_id).join(Game.game_players).join(GamePlayer.player).one()
     num_players = len(game_players_query.game_players)
     next_game_player = None
+    other_game_players = []
     for game_player in game_players_query.game_players:
         if game_players_query.turn_number % num_players == game_player.turn_order:
             next_game_player = game_player
-            break
+        else:
+            other_game_players.append(game_player)
     player_devices = db.session.query(Device).filter(
         Device.user_id == next_game_player.player.user_id).all()
+    other_player_names = [game_player.player.display_name for game_player in other_game_players]
     notification_requests = []
     for player_device in player_devices:
         notification_requests.append(
-            NotificationFactory.make_next_turn_notification(player_device.device_token, game_id))
+            NotificationFactory.make_next_turn_notification(
+                player_device.device_token, game_id, other_player_names
+            ))
     apns.notify(notification_requests)
 
 
