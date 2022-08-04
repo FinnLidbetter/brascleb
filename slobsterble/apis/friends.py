@@ -41,6 +41,7 @@ class FriendsView(Resource):
             ],
             'friend_key': current_player.friend_key
         }
+        data['friends'].sort(key=lambda player: player['display_name'])
         return jsonify(data)
 
     @staticmethod

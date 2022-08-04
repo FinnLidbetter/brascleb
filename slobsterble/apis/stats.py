@@ -23,6 +23,7 @@ class StatsView(Resource):
             {'player_id': player.id, 'display_name': player.display_name}
             for player in current_player.friends
         ]
+        friends.sort(key=lambda player: player['display_name'])
         data = {
             'wins': current_player.wins,
             'losses': current_player.losses,
