@@ -32,6 +32,7 @@ class NewGameView(Resource):
                 for player in current_player.friends
             ]
         }
+        data['friends'].sort(key=lambda player: player['display_name'])
         return jsonify(data)
 
     @staticmethod
