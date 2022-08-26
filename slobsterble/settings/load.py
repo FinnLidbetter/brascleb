@@ -63,3 +63,4 @@ def load_config(settings, testing=False):
     settings.WEB_HOST = config.get('web', 'HOST', fallback='slobsterble.finnlidbetter.com')
     settings.WEB_PORT = config.get('web', 'PORT', fallback='443')
     settings.ROOT_URL = f'{settings.WEB_PROTOCOL}://{settings.WEB_HOST}:{settings.WEB_PORT}'
+    settings.ADMIN_EMAIL = config.get('web', 'ADMIN_EMAIL')

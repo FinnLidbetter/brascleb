@@ -50,8 +50,9 @@ def init_db(app):
                     db.session.add(admin_user)
                     db.session.commit()
             except sqlalchemy.exc.OperationalError as err:
-                if 'no such column: user.verified' not in str(err):
+                if 'no such column: user.delete_requested' not in str(err):
                     raise
+
 
 
 def init_migrate(app):
@@ -112,6 +113,7 @@ def init_api(app):
         BoardLayoutView,
         DictionaryView,
         EmailVerificationView,
+        FreshTokenView,
         FriendsView,
         GameView,
         IndexView,
@@ -124,6 +126,7 @@ def init_api(app):
         PasswordResetView,
         PlayerSettingsView,
         RegisterView,
+        RequestAccountDeletionView,
         RequestVerificationEmailView,
         RequestPasswordResetView,
         StatsView,
@@ -136,9 +139,11 @@ def init_api(app):
     api.add_resource(AdminLoginView, '/admin-login')
     api.add_resource(AdminLogoutView, '/admin-logout')
     api.add_resource(TokenRefreshView, '/api/refresh-access')
+    api.add_resource(FreshTokenView, '/api/fresh-token')
     api.add_resource(WebsiteRegisterView, '/site-register')
     api.add_resource(PasswordResetView, '/reset-password')
     api.add_resource(RequestVerificationEmailView, '/api/send-verification-email')
+    api.add_resource(RequestAccountDeletionView, '/api/request-account-deletion')
     api.add_resource(RequestPasswordResetView, '/api/request-password-reset')
     api.add_resource(RegisterView, '/api/register')
     api.add_resource(EmailVerificationView, '/api/verify')

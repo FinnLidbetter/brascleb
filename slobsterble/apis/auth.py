@@ -69,6 +69,25 @@ class TokenRefreshView(Resource):
         return jsonify(data)
 
 
+class FreshTokenView(Resource):
+
+    @staticmethod
+    def post():
+        username = request.json.get("username", None)
+        password = request.json.get("password", None)
+        user = User.query.filter_by(username=username).one_or_none()
+        if not user or not user.check_password(password):
+            return Response('Incorrect username or password', status=401)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        fresh_access_token = create_access_token(identity=user, fresh=True)
+        access_expiration_date = now + jwt_config.access_expires
+        data = {
+            'token': fresh_access_token,
+            'expiration_date': access_expiration_date.timestamp(),
+        }
+        return jsonify(data)
+
+
 class LoginView(Resource):
 
     @staticmethod
@@ -435,6 +454,26 @@ class RequestPasswordResetView(Resource):
         return Response('Password reset email sent')
 
 
+class RequestAccountDeletionView(Resource):
+    """View for handling requests for account deletion."""
+
+    @staticmethod
+    @jwt_required(fresh=True)
+    def post():
+        """Request account deletion by sending an email to the admin."""
+        if current_user.delete_requested:
+            return Response(
+                "Your request has already been submitted. It is being processed.",
+                status=400)
+        current_user.delete_requested = True
+        try:
+            send_deletion_request_to_admin(current_user.username)
+            db.session.commit()
+        except Exception as err:
+            return Response(str(err), status=400)
+        return Response(status=200)
+
+
 def _is_plausible_email(email_to_verify):
     basic_email_pattern = r'.+@.+\..+'
     email_max_len = 320
@@ -514,3 +553,18 @@ def send_password_reset_email(email_address, token):
     except SMTPException:
         current_app.logger.exception('Error sending verification email.')
         raise
+
+
+def send_deletion_request_to_admin(requesting_user):
+    """Send an email to the admin to request account deletion of a user."""
+    message = \
+        f'User {requesting_user} has requested deletion of their ReRack account.'
+    try:
+        mail.send_mail(
+            'Account Deletion Request',
+            message=message,
+            from_email='rerack-noreply@finnlidbetter.com',
+            recipient_list=[current_app.config['ADMIN_EMAIL']],
+        )
+    except SMTPException:
+        current_app.logger.exception('Error sending deletion request.')

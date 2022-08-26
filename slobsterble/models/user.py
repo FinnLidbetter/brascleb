@@ -42,6 +42,7 @@ class User(db.Model, UserMixin, ModelMixin, ModelSerializer):
 
     activated = db.Column(db.Boolean, nullable=False, default=False)
     verified = db.Column(db.Boolean, nullable=False, default=False)
+    delete_requested = db.Column(db.Boolean, nullable=False, default=False)
     username = db.Column(db.String(255, collation='NOCASE'),
                          unique=True,
                          nullable=False)
