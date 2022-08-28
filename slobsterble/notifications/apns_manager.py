@@ -73,7 +73,7 @@ class APNSManager:
             try:
                 self.client.send_notification(notification, topic=config.topic)
             except BadDeviceTokenException:
-                if not app.config['APNS_USE_SANDBOX']:
+                if not current_app.config['APNS_USE_SANDBOX']:
                     current_app.logger.info(
                         'Retrying notification %s to %s with sandbox.',
                         notification.payload, notification.token)
