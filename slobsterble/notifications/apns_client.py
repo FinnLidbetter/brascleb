@@ -10,6 +10,7 @@ from slobsterble.notifications.apns_exceptions import (
     APNSException,
     APNSConnectionException,
     APNSServerException,
+    BadDeviceTokenException,
     UnregisteredException,
     exception_class_for_reason,
 )
@@ -163,5 +164,5 @@ class APNsClient:
                 'Failed to send notification %s to %s due to %s.',
                 payload.dict(), device_token, repr(exc)
             )
-            if isinstance(exc, UnregisteredException):
+            if isinstance(exc, (UnregisteredException, BadDeviceTokenException)):
                 raise exc
