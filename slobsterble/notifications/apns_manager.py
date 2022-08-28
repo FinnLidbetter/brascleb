@@ -76,7 +76,7 @@ class APNSManager:
                 if not current_app.config['APNS_USE_SANDBOX']:
                     current_app.logger.info(
                         'Retrying notification %s to %s with sandbox.',
-                        notification.payload, notification.token)
+                        notification.payload.dict(), notification.token)
                     self.fallback_sandbox_client.send_notification(
                         notification, topic=config.topic)
                 else:
