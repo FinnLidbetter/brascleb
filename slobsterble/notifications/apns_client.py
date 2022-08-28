@@ -161,7 +161,7 @@ class APNsClient:
         if exc is not None:
             logger.exception(
                 'Failed to send notification %s to %s due to %s.',
-                payload.dict(), device_token, str(exc)
+                payload.dict(), device_token, repr(exc)
             )
             if isinstance(exc, UnregisteredException):
                 raise exc
