@@ -65,7 +65,7 @@ class APNSManager:
         """Unregister the device."""
         models = {
             mapper.class_.__name__: mapper.class_
-            for mapper in db.Model.registry.mappers
+            for mapper in self.db.Model.registry.mappers
         }
         device_klass = models['Device']
         current_app.logger.info('Removing unregistered device %s.', device_token)
