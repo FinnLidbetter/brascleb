@@ -72,7 +72,7 @@ class APNSManager:
         unregistered_devices = self.db.session.query(device_klass).filter_by(
             device_token=device_token).all()
         for unregistered_device in unregistered_devices:
-            self.db.session.remove(unregistered_device)
+            self.db.session.delete(unregistered_device)
         self.db.session.commit()
 
     def notify(self, notifications):
