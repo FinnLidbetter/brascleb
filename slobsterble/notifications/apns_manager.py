@@ -2,7 +2,6 @@
 
 from flask import current_app
 
-from slobsterble.models import Device
 from slobsterble.notifications.apns_client import APNsClient
 from slobsterble.notifications.apns_credentials import TokenCredentials
 from slobsterble.notifications.apns_exceptions import (
@@ -63,6 +62,7 @@ class APNSManager:
         self.client.reset_connection()
 
     def handle_unregistered_device(self, device_token):
+        from slobsterble.models import Device
         current_app.logger.info('Removing unregistered device %s.', device_token)
         unregistered_devices = self.db.session.query(Device).filter_by(
             device_token=device_token).all()
