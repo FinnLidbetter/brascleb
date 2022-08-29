@@ -62,9 +62,14 @@ class APNSManager:
         self.client.reset_connection()
 
     def handle_unregistered_device(self, device_token):
-        from slobsterble.models import Device
+        """Unregister the device."""
+        models = {
+            mapper.class_.__name__: mapper.class_
+            for mapper in db.Model.registry.mappers
+        }
+        device_klass = models['Device']
         current_app.logger.info('Removing unregistered device %s.', device_token)
-        unregistered_devices = self.db.session.query(Device).filter_by(
+        unregistered_devices = self.db.session.query(device_klass).filter_by(
             device_token=device_token).all()
         self.db.session.remove(unregistered_devices)
         self.db.session.commit()
