@@ -4,6 +4,7 @@ from slobsterble.apis.admin import SlobsterbleModelView
 from slobsterble.apis.auth import (
     AdminLoginView,
     AdminLogoutView,
+    DeviceTokenView,
     EmailVerificationView,
     FreshTokenView,
     LoginView,
@@ -34,6 +35,7 @@ __all__ = [
     'AdminLoginView',
     'AdminLogoutView',
     'BoardLayoutView',
+    'DeviceTokenView',
     'DictionaryView',
     'EmailVerificationView',
     'FreshTokenView',

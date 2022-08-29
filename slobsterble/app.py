@@ -111,6 +111,7 @@ def init_api(app):
         AdminLoginView,
         AdminLogoutView,
         BoardLayoutView,
+        DeviceTokenView,
         DictionaryView,
         EmailVerificationView,
         FreshTokenView,
@@ -138,6 +139,7 @@ def init_api(app):
     api.add_resource(IndexView, '/', '/index')
     api.add_resource(AdminLoginView, '/admin-login')
     api.add_resource(AdminLogoutView, '/admin-logout')
+    api.add_resource(DeviceTokenView, '/api/device-token')
     api.add_resource(TokenRefreshView, '/api/refresh-access')
     api.add_resource(FreshTokenView, '/api/fresh-token')
     api.add_resource(WebsiteRegisterView, '/site-register')

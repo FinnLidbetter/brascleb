@@ -474,6 +474,27 @@ class RequestAccountDeletionView(Resource):
         return Response(status=200)
 
 
+class DeviceTokenView(Resource):
+
+    @staticmethod
+    @jwt_required()
+    def post():
+        device_token = request.json.get("deviceToken", None)
+        if device_token is not None:
+            device_query = db.session.query(Device).filter_by(
+                user_id=current_user.id,
+                device_token=device_token
+            ).one_or_none()
+            if device_query is None:
+                device = Device(user=current_user, device_token=device_token,
+                                refreshed=datetime.datetime.now())
+                db.session.add(device)
+            else:
+                device_query.refreshed = datetime.datetime.now()
+        db.session.commit()
+        return Response(status=200)
+
+
 def _is_plausible_email(email_to_verify):
     basic_email_pattern = r'.+@.+\..+'
     email_max_len = 320
