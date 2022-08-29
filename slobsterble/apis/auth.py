@@ -479,7 +479,9 @@ class DeviceTokenView(Resource):
     @staticmethod
     @jwt_required()
     def post():
-        device_token = request.json.get("deviceToken", None)
+        device_token = request.json
+        if not isinstance(device_token, str):
+            return Response('Bad device token', status=400)
         if device_token is not None:
             device_query = db.session.query(Device).filter_by(
                 user_id=current_user.id,
