@@ -24,7 +24,8 @@ def notify_next_player(game_id):
     for player_device in player_devices:
         notification_requests.append(
             NotificationFactory.make_next_turn_notification(
-                player_device.device_token, game_id, other_player_names
+                player_device.device_token, game_id, other_player_names,
+                use_sandbox=player_device.is_sandbox_token,
             ))
     apns.notify(notification_requests)
 
@@ -43,7 +44,8 @@ def notify_new_game(game_id, game_players, creator_player):
                     device_token=player_device.device_token,
                     game_id=game_id,
                     creator_name=creator_player.display_name,
-                    your_turn=game_player.turn_order == 0
+                    your_turn=game_player.turn_order == 0,
+                    use_sandbox=player_device.is_sandbox_token,
                 )
             )
         apns.notify(notification_requests)

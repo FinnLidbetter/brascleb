@@ -170,3 +170,8 @@ class Device(db.Model, ModelMixin, ModelSerializer):
         nullable=False,
         doc='The most recent time that the user logged in with this device.'
     )
+    is_sandbox_token = db.Column(
+        db.Boolean, nullable=False, default=False,
+        doc='If true then do not attempt to send notifications to via the '
+            'production APNs server.'
+    )

@@ -61,13 +61,17 @@ class APNSManager:
         current_app.logger.info('Refreshing APNs client.')
         self.client.reset_connection()
 
-    def handle_unregistered_device(self, device_token):
-        """Unregister the device."""
+    def _get_device_model_class(self):
         models = {
             mapper.class_.__name__: mapper.class_
             for mapper in self.db.Model.registry.mappers
         }
         device_klass = models['Device']
+        return device_klass
+
+    def handle_unregistered_device(self, device_token):
+        """Unregister the device."""
+        device_klass = self._get_device_model_class()
         current_app.logger.info('Removing unregistered device %s.', device_token)
         unregistered_devices = self.db.session.query(device_klass).filter_by(
             device_token=device_token).all()
@@ -78,7 +82,10 @@ class APNSManager:
     def notify(self, notifications):
         for notification in notifications:
             try:
-                self.client.send_notification(notification, topic=config.topic)
+                if notification.use_sandbox and not current_app.config['APNS_USE_SANDBOX']:
+                    self.fallback_sandbox_client.send_notification(notification, topic=config.topic)
+                else:
+                    self.client.send_notification(notification, topic=config.topic)
             except BadDeviceTokenException:
                 if not current_app.config['APNS_USE_SANDBOX']:
                     current_app.logger.info(
@@ -86,6 +93,13 @@ class APNSManager:
                         notification.payload.dict(), notification.token)
                     self.fallback_sandbox_client.send_notification(
                         notification, topic=config.topic)
+                    device_klass = self._get_device_model_class()
+                    devices = self.db.session.query(device_klass).filter_by(
+                        device_token=notification.token
+                    ).all()
+                    for device in devices:
+                        device.is_sandbox_token = True
+                    self.db.session.commit()
                 else:
                     raise
             except APNSDeviceException:

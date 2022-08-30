@@ -30,7 +30,7 @@ class NotificationType(Enum):
     MDM = 'mdm'
 
 
-Notification = collections.namedtuple('Notification', ['token', 'payload'])
+Notification = collections.namedtuple('Notification', ['token', 'payload', 'use_sandbox'])
 
 DEFAULT_APNS_PRIORITY = NotificationPriority.Immediate
 

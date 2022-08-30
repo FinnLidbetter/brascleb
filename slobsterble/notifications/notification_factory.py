@@ -6,7 +6,7 @@ class NotificationFactory:
     """Manager for creating notification requests."""
 
     @staticmethod
-    def make_next_turn_notification(device_token, game_id, other_player_names):
+    def make_next_turn_notification(device_token, game_id, other_player_names, use_sandbox):
         """Create a Notification object for a next turn."""
         if len(other_player_names) == 1:
             other_players_string = other_player_names[0]
@@ -19,16 +19,16 @@ class NotificationFactory:
             badge=1,
             custom={'game_id': str(game_id)}
         )
-        notification = Notification(payload=payload, token=device_token)
+        notification = Notification(payload=payload, token=device_token, use_sandbox=use_sandbox)
         return notification
 
     @staticmethod
-    def make_new_game_notification(device_token, game_id, creator_name, your_turn):
+    def make_new_game_notification(device_token, game_id, creator_name, your_turn, use_sandbox):
         payload = Payload(
             alert='%s started a new game.%s' % (
                 creator_name, ' It is your turn to play!' if your_turn else ''),
             badge=1,
             custom={'game_id': str(game_id)}
         )
-        notification = Notification(payload=payload, token=device_token)
+        notification = Notification(payload=payload, token=device_token, use_sandbox=use_sandbox)
         return notification
