@@ -258,6 +258,13 @@ class RegisterView(Resource):
                             board_layout=default_board_layout,
                             distribution=default_distribution)
         db.session.add(new_player)
+        if current_app.config.get('DEFAULT_OPPONENT_USERNAME') is not None:
+            default_opponent_username = current_app.config['DEFAULT_OPPONENT_USERNAME']
+            default_opponent = db.session.query(Player).join(Player.user).filter_by(
+                username=default_opponent_username
+            ).one()
+            default_opponent.friends.append(new_player)
+            new_player.friends.append(default_opponent)
         verification_record, verification_token = _build_verification_record(data['username'], is_registration=True)
         send_verification_email(data['username'], verification_token)
         db.session.add(verification_record)
