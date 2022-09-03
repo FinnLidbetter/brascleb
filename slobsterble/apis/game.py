@@ -16,15 +16,21 @@ from slobsterble.game_play_controller import (
     fetch_game_state,
     get_game_player,
 )
-from slobsterble.models import Move
+from slobsterble.models import Move, PlayedTile
 from slobsterble.notifications.notify import notify_next_player
 
 
 class GameView(Resource):
 
-    @staticmethod
     @jwt_required()
-    def get(game_id):
+    def get(self, game_id):
+        if request.headers.get('Accept-version') == 'v2':
+            return self._versioned_get(game_id, 2)
+        else:
+            return self._versioned_get(game_id, 1)
+
+    @staticmethod
+    def _versioned_get(game_id, version):
         """
         Get the current state of the game.
 
@@ -88,6 +94,10 @@ class GameView(Resource):
                 'display_name': prev_play_player.player.display_name,
                 'exchanged_count': exchanged_count
             }
+            if version == 2:
+                prev_move_played_tiles = prev_move.played_tiles
+                serialized_prev_move_tiles = PlayedTile.serialize_list(prev_move_played_tiles)
+                serialized_prev_move['played_tiles'] = serialized_prev_move_tiles
             serialized_game_state['prev_move'] = serialized_prev_move
         else:
             serialized_game_state['prev_move'] = None
