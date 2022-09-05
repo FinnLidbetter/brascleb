@@ -54,7 +54,6 @@ def init_db(app):
                     raise
 
 
-
 def init_migrate(app):
     """
     Initialize flask_migrate.

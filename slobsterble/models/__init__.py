@@ -7,6 +7,7 @@ from slobsterble.models.board_layout import (
 )
 from slobsterble.models.dictionary import Dictionary, Entry
 from slobsterble.models.game import Game, GamePlayer, Move
+from slobsterble.models.lock import Lock
 from slobsterble.models.tile import Distribution, PlayedTile, Tile, TileCount
 from slobsterble.models.user import Device, Player, User, UserVerification
 
@@ -18,6 +19,7 @@ __all__ = [
     'Entry',
     'Game',
     'GamePlayer',
+    'Lock',
     'Modifier',
     'Move',
     'PlayedTile',
