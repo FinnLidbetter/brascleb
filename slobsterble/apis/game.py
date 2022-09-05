@@ -17,6 +17,7 @@ from slobsterble.game_play_controller import (
     get_game_player,
 )
 from slobsterble.models import Move, PlayedTile
+from slobsterble.models.lock import acquire_lock, AcquireLockException
 from slobsterble.notifications.notify import notify_next_player
 
 
@@ -109,32 +110,40 @@ class GameView(Resource):
     @jwt_required()
     def post(game_id):
         """API to play a turn of the game."""
-        data = request.get_json()
+        lock_expiry_seconds = 60
         try:
-            stateless_validator = StatelessValidator(data)
-            stateless_validator.validate()
-            try:
-                game_state = fetch_game_state(game_id)
-            except sqlalchemy.orm.exc.NoResultFound:
-                return Response('Game does not exist.', status=400)
-            game_player = get_game_player(game_state)
-            stateful_validator = StatefulValidator(data, game_state, game_player)
-            stateful_validator.validate()
-            game_board = stateful_validator.game_board
-            word_builder = WordBuilder(data, game_board)
-            primary_word, secondary_words = word_builder.get_played_words()
-            turn_score = word_builder.compute_score()
-            if primary_word is not None:
-                word_validator = WordValidator([primary_word] + secondary_words,
-                                               game_state.dictionary_id)
-                word_validator.validate()
-            state_updater = StateUpdater(
-                data=data, game_state=game_state, game_player=game_player,
-                turn_score=turn_score, primary_word=primary_word,
-                secondary_words=secondary_words)
-            game_over = state_updater.update_state()
-            if not game_over:
-                notify_next_player(game_id)
-            return Response('Turn played successfully.', status=200)
-        except slobsterble.api_exceptions.BaseApiException as play_error:
-            return Response(str(play_error), status=play_error.status_code)
+            with acquire_lock(f'game:{game_id}', expire_seconds=lock_expiry_seconds):
+                data = request.get_json()
+                try:
+                    stateless_validator = StatelessValidator(data)
+                    stateless_validator.validate()
+                    try:
+                        game_state = fetch_game_state(game_id)
+                    except sqlalchemy.orm.exc.NoResultFound:
+                        return Response('Game does not exist.', status=400)
+                    game_player = get_game_player(game_state)
+                    stateful_validator = StatefulValidator(data, game_state, game_player)
+                    stateful_validator.validate()
+                    game_board = stateful_validator.game_board
+                    word_builder = WordBuilder(data, game_board)
+                    primary_word, secondary_words = word_builder.get_played_words()
+                    turn_score = word_builder.compute_score()
+                    if primary_word is not None:
+                        word_validator = WordValidator([primary_word] + secondary_words,
+                                                       game_state.dictionary_id)
+                        word_validator.validate()
+                    state_updater = StateUpdater(
+                        data=data, game_state=game_state, game_player=game_player,
+                        turn_score=turn_score, primary_word=primary_word,
+                        secondary_words=secondary_words)
+                    game_over = state_updater.update_state()
+                    if not game_over:
+                        notify_next_player(game_id)
+                    return Response('Turn played successfully.', status=200)
+                except slobsterble.api_exceptions.BaseApiException as play_error:
+                    return Response(str(play_error), status=play_error.status_code)
+        except AcquireLockException:
+            return Response(
+                'Server error. Encountered a lock on this game. Please try again '
+                f'after at least {lock_expiry_seconds} seconds.',
+                status=500)

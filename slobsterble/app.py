@@ -85,6 +85,8 @@ def init_admin(app):
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.GamePlayer, db.session))
     admin.add_view(
+        SlobsterbleModelView(slobsterble.models.Lock, db.session))
+    admin.add_view(
         SlobsterbleModelView(slobsterble.models.Modifier, db.session))
     admin.add_view(
         SlobsterbleModelView(slobsterble.models.Move, db.session))
