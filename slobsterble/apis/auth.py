@@ -238,11 +238,12 @@ class RegisterView(Resource):
                             mimetype='application/json')
         if not _is_plausible_email(data['username']):
             return Response('Username must be a valid email address', status=400)
-        existing_user = User.query.filter_by(username=data['username']).first()
-        if existing_user:
-            return Response('User with this username already exists.', status=400)
         if data['password'] != data['confirmed_password']:
             return Response('Passwords do not match.', status=400)
+        existing_user = User.query.filter_by(username=data['username']).first()
+        if existing_user:
+            # Lie to the requester to avoid disclosing the existence of the account.
+            return Response(f'Verification email sent to {data["username"]}.', status=200)
         new_user = User(username=data['username'],
                         password_hash=generate_password_hash(data['password']))
         db.session.add(new_user)
@@ -265,7 +266,8 @@ class RegisterView(Resource):
             ).one()
             default_opponent.friends.append(new_player)
             new_player.friends.append(default_opponent)
-        verification_record, verification_token = _build_verification_record(data['username'], is_registration=True)
+        verification_record, verification_token = _build_verification_record(
+            data['username'], is_registration=True)
         send_verification_email(data['username'], verification_token)
         db.session.add(verification_record)
         db.session.commit()
@@ -302,10 +304,10 @@ class EmailVerificationView(Resource):
         if not re.fullmatch(r'[0-9A-Za-z_\-]+', token):
             return Response(f'Invalid token', status=400)
         user = db.session.query(User).filter_by(username=username).one_or_none()
-        if user is None:
-            return Response('Verification failed. User not found.', status=400)
-        if user.verified:
-            return Response('The user is already verified.', status=400)
+        if user is None or user.verified:
+            return Response(
+                'Verification failed. Please request a new '
+                'verification link.', status=400)
 
         now = int(time.time())
         active_records = db.session.query(UserVerification).filter_by(
@@ -317,7 +319,9 @@ class EmailVerificationView(Resource):
                 verification_record = record
                 break
         if verification_record is None:
-            return Response('Verification failed. Please request a new verification link.', status=400)
+            return Response(
+                'Verification failed. Please request a new '
+                'verification link.', status=400)
         user.verified = True
         verification_record.used = True
         db.session.commit()
@@ -334,31 +338,21 @@ class RequestVerificationEmailView(Resource):
             return Response('Username must be a valid email address.', status=400)
         user = db.session.query(User).filter_by(username=username).one_or_none()
         if user is None:
-            return Response(f"User '{username}' does not exist. Please register an account.", status=404)
+            # Lie to the requester to avoid disclosing the existence of the account.
+            return Response("Verification email sent.", status=200)
         if user.verified:
-            return Response('User is already verified', status=403)
+            # Lie to the requester to avoid disclosing the existence of the account.
+            return Response('Verification email sent.', status=200)
         now = int(time.time())
         active_records = db.session.query(UserVerification).filter_by(
             username=username, used=False).filter(
             now < UserVerification.expiration_timestamp
         ).all()
         if len(active_records) > 3:
-            next_expiry = min(record.expiration_timestamp for record in active_records)
-            delta_seconds = max(2, next_expiry - now)
-            if delta_seconds < 120:
-                delay_string = f'{delta_seconds} seconds'
-            elif delta_seconds < 7200:
-                delay_string = f'{(delta_seconds // 60) + 1} minutes'
-            elif delta_seconds < 2 * 86400:
-                delay_string = f'{(delta_seconds // 3600) + 1} hours'
-            else:
-                delay_string = f'{(delta_seconds // 86400) + 1} days'
-            return Response(
-                'Multiple verification emails have already been sent. '
-                f'Please check your spam and try again in {delay_string}',
-                status=400
-            )
-        verification_record, verification_token = _build_verification_record(username, is_registration=True)
+            # Lie to the requester to avoid disclosing the existence of the account.
+            return Response('Verification email sent.', status=200)
+        verification_record, verification_token = _build_verification_record(
+            username, is_registration=True)
         send_verification_email(username, verification_token)
         db.session.add(verification_record)
         db.session.commit()
@@ -400,17 +394,14 @@ class PasswordResetView(Resource):
                     verification_record = record
                     break
             if verification_record is None:
-                # This is possibly a lie. If the user submitted without requesting a
-                # password reset, then there would be no matching token.
-                return Response('The password reset link has expired.', status=400)
+                return Response('Invalid username or token.', status=400)
             if verification_record.used:
-                return Response('Error. This link has already been used.', status=400)
+                return Response('Invalid username or token.', status=400)
             user = db.session.query(User).filter_by(username=username).one_or_none()
             if user is None:
-                return Response(f'User with username {username} not found.', status=400)
-            if not user.verified:
-                return Response('The user is not verified. Cannot reset password.', status=400)
+                return Response('Invalid username or token.', status=400)
             user.set_password(new_password)
+            user.verified = True
             verification_record.used = True
             db.session.commit()
             return Response(f'Success! Password has been reset for {form.username.data}', status=200)
@@ -429,36 +420,22 @@ class RequestPasswordResetView(Resource):
         now = int(time.time())
         user = db.session.query(User).filter_by(username=username).one_or_none()
         if user is None:
-            return Response('Error. User does not exist.', status=400)
-        if not user.verified:
-            return Response('Error. Cannot reset the password of an unverified user.', status=400)
+            # Lie to the requester to avoid disclosing the existence of the account.
+            return Response('Password reset email sent.', status=200)
         active_records = db.session.query(UserVerification).filter_by(
             username=username, used=False
         ).filter(
             UserVerification.expiration_timestamp > now
         ).all()
         if len(active_records) > 3:
-            next_expiry = min(record.expiration_timestamp for record in active_records)
-            delta_seconds = max(2, next_expiry - now)
-            if delta_seconds < 120:
-                delay_string = f'{delta_seconds} seconds'
-            elif delta_seconds < 7200:
-                delay_string = f'{(delta_seconds // 60) + 1} minutes'
-            elif delta_seconds < 2 * 86400:
-                delay_string = f'{(delta_seconds // 3600) + 1} hours'
-            else:
-                delay_string = f'{(delta_seconds // 86400) + 1} days'
-            return Response(
-                'Multiple password reset emails have already been sent. '
-                f'Please check your spam and try again in {delay_string}',
-                status=400
-            )
+            # Lie to the requester to avoid disclosing the existence of the account.
+            return Response('Password reset email sent.', status=200)
         verification_record, token = _build_verification_record(
             username, is_registration=False)
         send_password_reset_email(username, token)
         db.session.add(verification_record)
         db.session.commit()
-        return Response('Password reset email sent')
+        return Response('Password reset email sent', status=200)
 
 
 class RequestAccountDeletionView(Resource):
