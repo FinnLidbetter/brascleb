@@ -135,7 +135,6 @@ def init_api(app):
         TileDistributionView,
         TokenRefreshView,
         TwoLetterWordView,
-        WebsiteRegisterView,
     )
     api.add_resource(IndexView, '/', '/index')
     api.add_resource(AdminLoginView, '/admin-login')
@@ -143,7 +142,6 @@ def init_api(app):
     api.add_resource(DeviceTokenView, '/api/device-token')
     api.add_resource(TokenRefreshView, '/api/refresh-access')
     api.add_resource(FreshTokenView, '/api/fresh-token')
-    api.add_resource(WebsiteRegisterView, '/site-register')
     api.add_resource(PasswordResetView, '/reset-password')
     api.add_resource(RequestVerificationEmailView, '/api/send-verification-email')
     api.add_resource(RequestAccountDeletionView, '/api/request-account-deletion')

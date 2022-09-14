@@ -15,7 +15,6 @@ from slobsterble.apis.auth import (
     RequestVerificationEmailView,
     RequestPasswordResetView,
     TokenRefreshView,
-    WebsiteRegisterView,
 )
 from slobsterble.apis.board_layout import BoardLayoutView
 from slobsterble.apis.dictionary import DictionaryView, TwoLetterWordView
@@ -59,6 +58,5 @@ __all__ = [
     'TileDistributionView',
     'TokenRefreshView',
     'TwoLetterWordView',
-    'WebsiteRegisterView',
 ]
 

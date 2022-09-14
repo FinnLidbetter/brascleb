@@ -8,7 +8,6 @@
       <li><span>{{ g.user['username'] }}</span>
       <li><a href="{{ url_for('adminlogoutview') }}">Log Out</a>
     {% else %}
-      <li><a href="{{ url_for('websiteregisterview') }}">Register</a>
       <li><a href="{{ url_for('adminloginview') }}">Log In</a>
     {% endif %}
   </ul>

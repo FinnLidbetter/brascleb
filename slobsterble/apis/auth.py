@@ -177,55 +177,6 @@ class AdminLogoutView(Resource):
         return redirect(url_for('adminloginview'))
 
 
-class WebsiteRegisterView(Resource):
-
-    @staticmethod
-    def get():
-        form = RegisterForm()
-        return Response(render_template('auth/register.html', title='Register', form=form), status=200)
-
-    @staticmethod
-    def post():
-        form = RegisterForm()
-        if form.validate_on_submit():
-            existing_user = User.query.filter_by(
-                username=form.username.data).first()
-            if existing_user:
-                flash('User with this username already exists.')
-                return Response(
-                    render_template('auth/register.html', title='Register',
-                                    form=form), status=200)
-            if form.password.data != form.confirm_password.data:
-                flash('Passwords do not match.')
-                return Response(
-                    render_template('auth/register.html', title='Register',
-                                    form=form), status=200)
-            if not _is_plausible_email(form.username.data):
-                return Response('Username must be a valid email address', status=400)
-            new_user = User(username=form.username.data,
-                            password_hash=generate_password_hash(form.password.data))
-            db.session.add(new_user)
-            default_dictionary = db.session.query(Dictionary).filter_by(
-                id=2).first()
-            default_board_layout = db.session.query(BoardLayout).filter_by(
-                name='Classic').first()
-            default_distribution = db.session.query(Distribution).filter_by(
-                name='Classic').first()
-            new_player = Player(user=new_user, display_name=form.display_name.data,
-                                dictionary=default_dictionary,
-                                board_layout=default_board_layout,
-                                distribution=default_distribution)
-            db.session.add(new_player)
-            verification_record, verification_token = _build_verification_record(
-                form.username.data, is_registration=True
-            )
-            send_verification_email(data['username'], verification_token)
-            db.session.commit()
-            return redirect(url_for('indexview'))
-        flash('Invalid form submission')
-        return Response(render_template('auth/register.html', title='Register', form=form), status=200)
-
-
 class RegisterView(Resource):
 
     @staticmethod
