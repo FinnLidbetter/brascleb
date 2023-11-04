@@ -18,5 +18,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Unknown classifier",
     ],
-    python_requires='>=3.6',
+    python_requires=">=3.6",
 )

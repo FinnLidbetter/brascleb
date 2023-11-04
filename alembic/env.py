@@ -21,10 +21,10 @@ config = context.config
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 
-if current_app.config['TESTING']:
-    logging.getLogger('alembic').setLevel(logging.ERROR)
+if current_app.config["TESTING"]:
+    logging.getLogger("alembic").setLevel(logging.ERROR)
 
-config.set_main_option('sqlalchemy.url', current_app.config['SQLALCHEMY_DATABASE_URI'])
+config.set_main_option("sqlalchemy.url", current_app.config["SQLALCHEMY_DATABASE_URI"])
 
 target_metadata = db.metadata
 
@@ -32,13 +32,14 @@ target_metadata = db.metadata
 def combine_metadata():
     m = MetaData()
     for model_name in models.__all__:
-        model_metadata = getattr(getattr(models, model_name), 'metadata')
+        model_metadata = getattr(getattr(models, model_name), "metadata")
         for t in model_metadata.tables.values():
             t.tometadata(m)
     return m
 
 
 # target_metadata = combine_metadata()
+
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
@@ -52,7 +53,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option('sqlalchemy.url')
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -70,13 +71,17 @@ def run_migrations_online():
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
-    engine = engine_from_config(config.get_section(config.config_ini_section),
-                                prefix='sqlalchemy.',
-                                poolclass=pool.NullPool)
+    engine = engine_from_config(
+        config.get_section(config.config_ini_section),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
     connection = engine.connect()
-    context.configure(connection=connection,
-                      target_metadata=target_metadata,
-                      **current_app.extensions['migrate'].configure_args)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        **current_app.extensions["migrate"].configure_args
+    )
     try:
         with context.begin_transaction():
             context.run_migrations()

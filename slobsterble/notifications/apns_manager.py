@@ -24,41 +24,42 @@ class APNSManager:
             self.init_app(app, db)
 
     def init_app(self, app, db):
-        if not hasattr(app, 'extensions'):
+        if not hasattr(app, "extensions"):
             app.extensions = {}
-        app.extensions['flask-apns'] = self
+        app.extensions["flask-apns"] = self
         self.db = db
         self._set_default_configuration_options(app)
         self._credentials = TokenCredentials(
-            auth_key_path=app.config['APNS_KEY_PATH'],
-            auth_key_id=app.config['APNS_KEY_ID'],
-            team_id=app.config['APNS_TEAM_ID'])
+            auth_key_path=app.config["APNS_KEY_PATH"],
+            auth_key_id=app.config["APNS_KEY_ID"],
+            team_id=app.config["APNS_TEAM_ID"],
+        )
         self.client = APNsClient(
             credentials=self._credentials,
-            use_sandbox=app.config['APNS_USE_SANDBOX'],
-            notification_retries=app.config['APNS_NOTIFICATION_RETRIES_MAX']
+            use_sandbox=app.config["APNS_USE_SANDBOX"],
+            notification_retries=app.config["APNS_NOTIFICATION_RETRIES_MAX"],
         )
-        if not app.config['APNS_USE_SANDBOX']:
+        if not app.config["APNS_USE_SANDBOX"]:
             self.fallback_sandbox_client = APNsClient(
                 credentials=self._credentials,
                 use_sandbox=True,
-                notification_retries=app.config['APNS_NOTIFICATION_RETRIES_MAX']
+                notification_retries=app.config["APNS_NOTIFICATION_RETRIES_MAX"],
             )
 
     @staticmethod
     def _set_default_configuration_options(app):
-        app.config.setdefault('APNS_CERT_FILE_PATH', None)
-        app.config.setdefault('APNS_KEY_PATH', None)
-        app.config.setdefault('APNS_KEY_ID', None)
-        app.config.setdefault('APNS_TEAM_ID', None)
-        app.config.setdefault('APNS_TOPIC', None)
-        app.config.setdefault('APNS_HEARTBEAT_SECONDS', None)
-        app.config.setdefault('APNS_USE_SANDBOX', False)
-        app.config.setdefault('APNS_NOTIFICATION_RETRIES_MAX', 3)
+        app.config.setdefault("APNS_CERT_FILE_PATH", None)
+        app.config.setdefault("APNS_KEY_PATH", None)
+        app.config.setdefault("APNS_KEY_ID", None)
+        app.config.setdefault("APNS_TEAM_ID", None)
+        app.config.setdefault("APNS_TOPIC", None)
+        app.config.setdefault("APNS_HEARTBEAT_SECONDS", None)
+        app.config.setdefault("APNS_USE_SANDBOX", False)
+        app.config.setdefault("APNS_NOTIFICATION_RETRIES_MAX", 3)
 
     def refresh_client(self):
         """Reset the client."""
-        current_app.logger.info('Refreshing APNs client.')
+        current_app.logger.info("Refreshing APNs client.")
         self.client.reset_connection()
 
     def _get_device_model_class(self):
@@ -66,15 +67,18 @@ class APNSManager:
             mapper.class_.__name__: mapper.class_
             for mapper in self.db.Model.registry.mappers
         }
-        device_klass = models['Device']
+        device_klass = models["Device"]
         return device_klass
 
     def handle_unregistered_device(self, device_token):
         """Unregister the device."""
         device_klass = self._get_device_model_class()
-        current_app.logger.info('Removing unregistered device %s.', device_token)
-        unregistered_devices = self.db.session.query(device_klass).filter_by(
-            device_token=device_token).all()
+        current_app.logger.info("Removing unregistered device %s.", device_token)
+        unregistered_devices = (
+            self.db.session.query(device_klass)
+            .filter_by(device_token=device_token)
+            .all()
+        )
         for unregistered_device in unregistered_devices:
             self.db.session.delete(unregistered_device)
         self.db.session.commit()
@@ -82,21 +86,31 @@ class APNSManager:
     def notify(self, notifications):
         for notification in notifications:
             try:
-                if notification.use_sandbox and not current_app.config['APNS_USE_SANDBOX']:
-                    self.fallback_sandbox_client.send_notification(notification, topic=config.topic)
+                if (
+                    notification.use_sandbox
+                    and not current_app.config["APNS_USE_SANDBOX"]
+                ):
+                    self.fallback_sandbox_client.send_notification(
+                        notification, topic=config.topic
+                    )
                 else:
                     self.client.send_notification(notification, topic=config.topic)
             except BadDeviceTokenException:
-                if not current_app.config['APNS_USE_SANDBOX']:
+                if not current_app.config["APNS_USE_SANDBOX"]:
                     current_app.logger.info(
-                        'Retrying notification %s to %s with sandbox.',
-                        notification.payload.dict(), notification.token)
+                        "Retrying notification %s to %s with sandbox.",
+                        notification.payload.dict(),
+                        notification.token,
+                    )
                     self.fallback_sandbox_client.send_notification(
-                        notification, topic=config.topic)
+                        notification, topic=config.topic
+                    )
                     device_klass = self._get_device_model_class()
-                    devices = self.db.session.query(device_klass).filter_by(
-                        device_token=notification.token
-                    ).all()
+                    devices = (
+                        self.db.session.query(device_klass)
+                        .filter_by(device_token=notification.token)
+                        .all()
+                    )
                     for device in devices:
                         device.is_sandbox_token = True
                     self.db.session.commit()

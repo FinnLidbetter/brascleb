@@ -15,6 +15,7 @@ jsonschema==4.19.2
 WTForms==3.1.1
 
 # Code quality
+black==23.10.1
 flake8==6.1.0
 pytest==7.4.3
 

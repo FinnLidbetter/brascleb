@@ -4,6 +4,7 @@ from datetime import datetime
 
 # BASE
 
+
 class APNSException(Exception):
     """The base class for all exceptions."""
 
@@ -39,6 +40,7 @@ class APNSProgrammingException(APNSException):
 
 # CONNECTION
 
+
 class APNSConnectionException(APNSServerException):
     """Used when a connectinon to APNS servers fails."""
 
@@ -47,6 +49,7 @@ class APNSConnectionException(APNSServerException):
 
 
 # APNS REASONS
+
 
 class BadCollapseIdException(APNSProgrammingException):
     """The collapse identifier exceeds the maximum allowed size."""
@@ -209,32 +212,32 @@ class ShutdownException(APNSServerException):
 
 def exception_class_for_reason(reason):
     return {
-        'BadCollapseId': BadCollapseIdException,
-        'BadDeviceToken': BadDeviceTokenException,
-        'BadExpirationDate': BadExpirationDateException,
-        'BadMessageId': BadMessageIdException,
-        'BadPriority': BadPriorityException,
-        'BadTopic': BadTopicException,
-        'DeviceTokenNotForTopic': DeviceTokenNotForTopicException,
-        'DuplicateHeaders': DuplicateHeadersException,
-        'IdleTimeout': IdleTimeoutException,
-        'MissingDeviceToken': MissingDeviceTokenException,
-        'MissingTopic': MissingTopicException,
-        'PayloadEmpty': PayloadEmptyException,
-        'TopicDisallowed': TopicDisallowedException,
-        'BadCertificate': BadCertificateException,
-        'BadCertificateEnvironment': BadCertificateEnvironmentException,
-        'ExpiredProviderToken': ExpiredProviderTokenException,
-        'Forbidden': ForbiddenException,
-        'InvalidProviderToken': InvalidProviderTokenException,
-        'MissingProviderToken': MissingProviderTokenException,
-        'BadPath': BadPathException,
-        'MethodNotAllowed': MethodNotAllowedException,
-        'Unregistered': UnregisteredException,
-        'PayloadTooLarge': PayloadTooLargeException,
-        'TooManyProviderTokenUpdates': TooManyProviderTokenUpdatesException,
-        'TooManyRequests': TooManyRequestsException,
-        'InternalServerError': InternalServerErrorException,
-        'ServiceUnavailable': ServiceUnavailableException,
-        'Shutdown': ShutdownException,
+        "BadCollapseId": BadCollapseIdException,
+        "BadDeviceToken": BadDeviceTokenException,
+        "BadExpirationDate": BadExpirationDateException,
+        "BadMessageId": BadMessageIdException,
+        "BadPriority": BadPriorityException,
+        "BadTopic": BadTopicException,
+        "DeviceTokenNotForTopic": DeviceTokenNotForTopicException,
+        "DuplicateHeaders": DuplicateHeadersException,
+        "IdleTimeout": IdleTimeoutException,
+        "MissingDeviceToken": MissingDeviceTokenException,
+        "MissingTopic": MissingTopicException,
+        "PayloadEmpty": PayloadEmptyException,
+        "TopicDisallowed": TopicDisallowedException,
+        "BadCertificate": BadCertificateException,
+        "BadCertificateEnvironment": BadCertificateEnvironmentException,
+        "ExpiredProviderToken": ExpiredProviderTokenException,
+        "Forbidden": ForbiddenException,
+        "InvalidProviderToken": InvalidProviderTokenException,
+        "MissingProviderToken": MissingProviderTokenException,
+        "BadPath": BadPathException,
+        "MethodNotAllowed": MethodNotAllowedException,
+        "Unregistered": UnregisteredException,
+        "PayloadTooLarge": PayloadTooLargeException,
+        "TooManyProviderTokenUpdates": TooManyProviderTokenUpdatesException,
+        "TooManyRequests": TooManyRequestsException,
+        "InternalServerError": InternalServerErrorException,
+        "ServiceUnavailable": ServiceUnavailableException,
+        "Shutdown": ShutdownException,
     }[reason]

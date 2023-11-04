@@ -7,8 +7,13 @@ from slobsterble.notifications.notification_factory import NotificationFactory
 
 def notify_next_player(game_id):
     """Notify the next player in the game that it is their turn."""
-    game_players_query = db.session.query(Game).filter(
-        Game.id == game_id).join(Game.game_players).join(GamePlayer.player).one()
+    game_players_query = (
+        db.session.query(Game)
+        .filter(Game.id == game_id)
+        .join(Game.game_players)
+        .join(GamePlayer.player)
+        .one()
+    )
     num_players = len(game_players_query.game_players)
     next_game_player = None
     other_game_players = []
@@ -17,16 +22,24 @@ def notify_next_player(game_id):
             next_game_player = game_player
         else:
             other_game_players.append(game_player)
-    player_devices = db.session.query(Device).filter(
-        Device.user_id == next_game_player.player.user_id).all()
-    other_player_names = [game_player.player.display_name for game_player in other_game_players]
+    player_devices = (
+        db.session.query(Device)
+        .filter(Device.user_id == next_game_player.player.user_id)
+        .all()
+    )
+    other_player_names = [
+        game_player.player.display_name for game_player in other_game_players
+    ]
     notification_requests = []
     for player_device in player_devices:
         notification_requests.append(
             NotificationFactory.make_next_turn_notification(
-                player_device.device_token, game_id, other_player_names,
+                player_device.device_token,
+                game_id,
+                other_player_names,
                 use_sandbox=player_device.is_sandbox_token,
-            ))
+            )
+        )
     apns.notify(notification_requests)
 
 
@@ -36,8 +49,11 @@ def notify_new_game(game_id, game_players, creator_player):
         if game_player.player_id == creator_player.id:
             # Do not notify the player that created the game.
             continue
-        player_devices = db.session.query(Device).filter(
-            Device.user_id == game_player.player.user_id).all()
+        player_devices = (
+            db.session.query(Device)
+            .filter(Device.user_id == game_player.player.user_id)
+            .all()
+        )
         for player_device in player_devices:
             notification_requests.append(
                 NotificationFactory.make_new_game_notification(

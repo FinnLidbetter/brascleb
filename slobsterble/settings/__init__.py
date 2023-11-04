@@ -5,15 +5,12 @@ import sys
 
 from slobsterble.settings.load import load_config
 
-_TEST_PROGRAMS = (
-    'pytest',
-    'setup.py'
-)
+_TEST_PROGRAMS = ("pytest", "setup.py")
 
 TESTING = False
 if any(name in sys.argv[0] for name in _TEST_PROGRAMS):
     TESTING = True
-elif 'TESTING' in os.environ:
+elif "TESTING" in os.environ:
     TESTING = True
 
 ADMIN_USERNAME = None

@@ -19,8 +19,8 @@ from slobsterble.models import Dictionary, Entry
 
 
 # revision identifiers, used by Alembic.
-revision = '3ea1bfba1ae7'
-down_revision = '6296db12b063'
+revision = "3ea1bfba1ae7"
+down_revision = "6296db12b063"
 branch_labels = None
 depends_on = None
 
@@ -28,15 +28,17 @@ depends_on = None
 def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
-    dictionary_names = {'ENABLE (North American)': 'enable.txt',
-                        'YAWL (Extended)': 'yawl.txt'}
-    if current_app.config['TESTING']:
-        dictionary_names = {'TEST_1': 'test_1.txt'}
+    dictionary_names = {
+        "ENABLE (North American)": "enable.txt",
+        "YAWL (Extended)": "yawl.txt",
+    }
+    if current_app.config["TESTING"]:
+        dictionary_names = {"TEST_1": "test_1.txt"}
     dict_words = defaultdict(list)
     entries = {}
     for dictionary_name, path in dictionary_names.items():
         dictionary = Dictionary(name=dictionary_name)
-        with open(os.path.abspath('dictionaries/%s' % path)) as dictionary_file:
+        with open(os.path.abspath("dictionaries/%s" % path)) as dictionary_file:
             file_words = dictionary_file.readlines()
             file_words = [word.rstrip().lower() for word in file_words]
             for word in file_words:

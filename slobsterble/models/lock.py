@@ -17,15 +17,18 @@ from slobsterble.models.mixins import ModelMixin
 
 class Lock(db.Model, ModelMixin):
     """A utility table for a locking mechanism."""
+
     key = db.Column(
-        db.String(256), nullable=False, unique=True,
-        doc='A unique identifying string for the lock.'
+        db.String(256),
+        nullable=False,
+        unique=True,
+        doc="A unique identifying string for the lock.",
     )
     expiry = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
-        doc='The datetime after which the lock is invalid and should be '
-            'ignored and deleted.'
+        doc="The datetime after which the lock is invalid and should be "
+        "ignored and deleted.",
     )
 
 
@@ -38,11 +41,17 @@ def acquire_lock(key, expire_seconds=60, block_seconds=None):
         start_time = time.time()
         if block_seconds is None:
             block_seconds = -1
-        while (time.time() < start_time + block_seconds or first_check) and not lock_acquired:
+        while (
+            time.time() < start_time + block_seconds or first_check
+        ) and not lock_acquired:
             first_check = False
             lock = db.session.query(Lock).filter_by(key=key).one_or_none()
             if lock is None:
-                lock = Lock(key=key, expiry=datetime.datetime.now() + datetime.timedelta(seconds=expire_seconds))
+                lock = Lock(
+                    key=key,
+                    expiry=datetime.datetime.now()
+                    + datetime.timedelta(seconds=expire_seconds),
+                )
                 lock_acquired = True
                 db.session.add(lock)
             else:
@@ -50,7 +59,9 @@ def acquire_lock(key, expire_seconds=60, block_seconds=None):
                     # This lock should not still be here. It can be deleted.
                     # But rather than deleting and recreating it, just update
                     # the expiration.
-                    lock.expiry = datetime.datetime.now() + datetime.timedelta(seconds=expire_seconds)
+                    lock.expiry = datetime.datetime.now() + datetime.timedelta(
+                        seconds=expire_seconds
+                    )
                     lock_acquired = True
             if not lock_acquired:
                 time.sleep(0.1)
@@ -60,7 +71,9 @@ def acquire_lock(key, expire_seconds=60, block_seconds=None):
         yield
     except sqlalchemy.exc.IntegrityError:
         lock_acquired = False
-        raise AcquireLockException(f"Failed to acquire lock for key: {key} due to a race condition.")
+        raise AcquireLockException(
+            f"Failed to acquire lock for key: {key} due to a race condition."
+        )
     finally:
         if lock_acquired:
             db.session.query(Lock).filter(Lock.key == key).delete()

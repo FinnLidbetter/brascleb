@@ -15,7 +15,7 @@ from slobsterble.models import (
 )
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def app_fixture():
     """Setup an app."""
     slobsterble_app = create_app()
@@ -29,7 +29,7 @@ def client(app_fixture):
         yield test_client
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def db(app_fixture):
     """Setup the database."""
     with app_fixture.app_context():
@@ -48,17 +48,20 @@ def _build_player(user, db):
     default_dictionary = db.session.query(Dictionary).filter_by(id=1).first()
     default_board_layout = db.session.query(BoardLayout).filter_by(id=1).first()
     default_distribution = db.session.query(Distribution).filter_by(id=1).first()
-    player = Player(user=user, display_name=user.username,
-                    dictionary=default_dictionary,
-                    board_layout=default_board_layout,
-                    distribution=default_distribution)
+    player = Player(
+        user=user,
+        display_name=user.username,
+        dictionary=default_dictionary,
+        board_layout=default_board_layout,
+        distribution=default_distribution,
+    )
     return player
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def alice(db):
     """Create a User and Player called Alice."""
-    user = _build_user('Alice')
+    user = _build_user("Alice")
     player = _build_player(user, db)
     db.session.add(user)
     db.session.add(player)
@@ -69,10 +72,10 @@ def alice(db):
     db.session.commit()
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def bob(db):
     """Create a User and Player called Bob."""
-    user = _build_user('Bob')
+    user = _build_user("Bob")
     player = _build_player(user, db)
     db.session.add(user)
     db.session.add(player)
@@ -83,10 +86,10 @@ def bob(db):
     db.session.commit()
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def carol(db):
     """Create a User and Player called Carol."""
-    user = _build_user('Carol')
+    user = _build_user("Carol")
     player = _build_player(user, db)
     db.session.add(user)
     db.session.add(player)
@@ -132,30 +135,30 @@ def alice_carol_friend(db, alice, carol):
     db.session.commit()
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def alice_headers(alice):
     """Get access token headers for Alice."""
     alice_user, _ = alice
     access_token = create_access_token(alice_user)
-    headers = {'Authorization': 'Bearer {}'.format(access_token)}
+    headers = {"Authorization": "Bearer {}".format(access_token)}
     return headers
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def bob_headers(bob):
     """Get access token headers for Bob."""
     bob_user, _ = bob
     access_token = create_access_token(bob_user)
-    headers = {'Authorization': 'Bearer {}'.format(access_token)}
+    headers = {"Authorization": "Bearer {}".format(access_token)}
     return headers
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def carol_headers(carol):
     """Get access token headers for Carol."""
     carol_user, _ = carol
     access_token = create_access_token(carol_user)
-    headers = {'Authorization': 'Bearer {}'.format(access_token)}
+    headers = {"Authorization": "Bearer {}".format(access_token)}
     return headers
 
 
@@ -201,4 +204,3 @@ def alice_bob_carol_game(alice, bob, carol, db):
     db.session.delete(alice_game_player)
     db.session.delete(game)
     db.session.commit()
-

@@ -25,12 +25,12 @@ from slobsterble.utilities.tile_utilities import (
 
 
 NEW_GAME_SCHEMA = {
-    'type': 'array',
-    'minItems': 1,
-    'maxItems': GAME_PLAYERS_MAX - 1,
-    'uniqueItems': True,
-    'items': {
-        'type': 'integer',
+    "type": "array",
+    "minItems": 1,
+    "maxItems": GAME_PLAYERS_MAX - 1,
+    "uniqueItems": True,
+    "items": {
+        "type": "integer",
     },
 }
 
@@ -74,16 +74,17 @@ class StatefulValidator:
 
     def _validate_friends(self):
         """Validate the given player ids correspond to friends of the user."""
-        friend_id_set = {
-            friend_player.id for friend_player in self.player.friends}
+        friend_id_set = {friend_player.id for friend_player in self.player.friends}
         for friend_player_id in self.data:
             if friend_player_id not in friend_id_set:
                 raise slobsterble.api_exceptions.NewGameFriendException()
 
     def _validate_layout_distribution(self):
         """Validate that the player's tile distribution and layout are compatible."""
-        num_tiles = sum(tile_count.count for tile_count in
-                        self.player.distribution.tile_distribution)
+        num_tiles = sum(
+            tile_count.count
+            for tile_count in self.player.distribution.tile_distribution
+        )
         rows = self.player.board_layout.rows
         columns = self.player.board_layout.columns
         if num_tiles * SPACES_TILES_RATIO_MIN > rows * columns:
@@ -93,15 +94,19 @@ class StatefulValidator:
         """Validate that none of the players are in too many active games."""
         player_ids = [self.player.id] + self.data
         for player_id in player_ids:
-            active_games = db.session.query(GamePlayer).filter_by(
-                player_id=player_id).join(
-                GamePlayer.game).filter(Game.completed is None).count()
+            active_games = (
+                db.session.query(GamePlayer)
+                .filter_by(player_id=player_id)
+                .join(GamePlayer.game)
+                .filter(Game.completed is None)
+                .count()
+            )
             if active_games >= ACTIVE_GAME_LIMIT:
-                player = db.session.query(Player).filter_by(
-                    player_id=player_id).one()
+                player = db.session.query(Player).filter_by(player_id=player_id).one()
                 raise slobsterble.api_exceptions.NewGameActiveGamesException(
-                    'User %d has too many active games to start a new one.'
-                    % player.display_name)
+                    "User %d has too many active games to start a new one."
+                    % player.display_name
+                )
 
 
 class StateUpdater:
@@ -119,19 +124,22 @@ class StateUpdater:
         tile_objects = fetch_all_tiles(db.session)
         tile_object_map = build_tile_object_map(tile_objects)
         distribution_tile_counts = fetch_distribution_tile_counts(
-            base_game.initial_distribution_id)
+            base_game.initial_distribution_id
+        )
         bag_tile_count_map = build_tile_count_map(distribution_tile_counts)
         tiles_remaining = sum(bag_tile_count_map.values())
         for game_player in base_game_players:
             rack_tile_keys = random.sample(
                 list(bag_tile_count_map.keys()),
                 k=min(TILES_ON_RACK_MAX, tiles_remaining),
-                counts=list(bag_tile_count_map.values()))
+                counts=list(bag_tile_count_map.values()),
+            )
             rack_tile_count_map = defaultdict(int)
             for tile_key in rack_tile_keys:
                 rack_tile_count_map[tile_key] += 1
             mapped_rack_tile_counts = fetch_mapped_tile_counts(
-                db.session, rack_tile_count_map, tile_object_map)
+                db.session, rack_tile_count_map, tile_object_map
+            )
             rack_tile_counts = list(mapped_rack_tile_counts.values())
             game_player.rack = rack_tile_counts
             for tile_key, count in rack_tile_count_map.items():
@@ -140,7 +148,8 @@ class StateUpdater:
                     del bag_tile_count_map[tile_key]
                 tiles_remaining -= count
         mapped_bag_tile_counts = fetch_mapped_tile_counts(
-            db.session, bag_tile_count_map, tile_object_map)
+            db.session, bag_tile_count_map, tile_object_map
+        )
         base_game.bag_tiles = list(mapped_bag_tile_counts.values())
         db.session.add(base_game)
         db.session.add_all(base_game_players)
@@ -155,7 +164,8 @@ class StateUpdater:
             board_layout_id=self.initiator.board_layout_id,
             initial_distribution_id=self.initiator.distribution_id,
             started=start_time,
-            turn_number=0)
+            turn_number=0,
+        )
         return base_game
 
     def _build_game_players(self, base_game):
@@ -165,9 +175,10 @@ class StateUpdater:
         random.shuffle(shuffled_players)
         for turn_order_val, player in enumerate(shuffled_players):
             base_game_players.append(
-                GamePlayer(player=player, score=0,
-                           turn_order=turn_order_val,
-                           game=base_game))
+                GamePlayer(
+                    player=player, score=0, turn_order=turn_order_val, game=base_game
+                )
+            )
         return base_game_players
 
     def _fetch_players(self):
@@ -180,9 +191,13 @@ class StateUpdater:
 
 def fetch_distribution_tile_counts(distribution_id):
     """Get the tile count objects for the tile distribution."""
-    distribution = db.session.query(Distribution).filter_by(
-        id=distribution_id).options(
-        subqueryload(Distribution.tile_distribution).joinedload(
-            TileCount.tile)).one()
+    distribution = (
+        db.session.query(Distribution)
+        .filter_by(id=distribution_id)
+        .options(
+            subqueryload(Distribution.tile_distribution).joinedload(TileCount.tile)
+        )
+        .one()
+    )
     tile_counts = [tile_count for tile_count in distribution.tile_distribution]
     return tile_counts

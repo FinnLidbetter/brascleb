@@ -30,8 +30,8 @@ from slobsterble.models import (
 )
 
 # revision identifiers, used by Alembic.
-revision = 'b3069b0347d5'
-down_revision = '3ea1bfba1ae7'
+revision = "b3069b0347d5"
+down_revision = "3ea1bfba1ae7"
 branch_labels = None
 depends_on = None
 
@@ -40,7 +40,7 @@ def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
 
-    distribution = Distribution(name='Classic', creator_id=None)
+    distribution = Distribution(name="Classic", creator_id=None)
     for tile_tuple, count in CLASSIC_DISTRIBUTION.items():
         letter = tile_tuple[0]
         value = tile_tuple[1]
@@ -54,7 +54,7 @@ def upgrade():
                 distribution.tile_distribution.append(tile_count)
 
     for offset in range(26):
-        letter = chr(ord('A') + offset)
+        letter = chr(ord("A") + offset)
         tile = Tile(letter=letter, is_blank=True, value=0)
         session.add(tile)
     session.commit()
@@ -68,33 +68,39 @@ def upgrade():
     modifiers = defaultdict(dict)
     for row_index in range(classic_rows):
         for column_index in range(classic_columns):
-            letter_multiplier = CLASSIC_LETTER_MULTIPLIERS[
-                row_index][column_index]
+            letter_multiplier = CLASSIC_LETTER_MULTIPLIERS[row_index][column_index]
             word_multiplier = CLASSIC_WORD_MULTIPLIERS[row_index][column_index]
             if letter_multiplier == 1 and word_multiplier == 1:
                 continue
-            if letter_multiplier not in modifiers or word_multiplier not in \
-                    modifiers[letter_multiplier]:
-                modifier = Modifier(letter_multiplier=letter_multiplier,
-                                    word_multiplier=word_multiplier)
+            if (
+                letter_multiplier not in modifiers
+                or word_multiplier not in modifiers[letter_multiplier]
+            ):
+                modifier = Modifier(
+                    letter_multiplier=letter_multiplier, word_multiplier=word_multiplier
+                )
                 modifiers[letter_multiplier][word_multiplier] = modifier
                 session.add(modifier)
     session.commit()
     board_layout = BoardLayout(
-        name='Classic', creator_id=None, rows=classic_rows, columns=classic_columns)
+        name="Classic", creator_id=None, rows=classic_rows, columns=classic_columns
+    )
     for row_index in range(classic_rows):
         for column_index in range(classic_columns):
-            letter_multiplier = CLASSIC_LETTER_MULTIPLIERS[
-                row_index][column_index]
+            letter_multiplier = CLASSIC_LETTER_MULTIPLIERS[row_index][column_index]
             word_multiplier = CLASSIC_WORD_MULTIPLIERS[row_index][column_index]
             if letter_multiplier == 1 and word_multiplier == 1:
                 continue
-            modifier = session.query(Modifier).filter_by(
-                letter_multiplier=letter_multiplier,
-                word_multiplier=word_multiplier).first()
+            modifier = (
+                session.query(Modifier)
+                .filter_by(
+                    letter_multiplier=letter_multiplier, word_multiplier=word_multiplier
+                )
+                .first()
+            )
             positioned_modifier = PositionedModifier(
-                row=row_index, column=column_index,
-                modifier_id=modifier.id)
+                row=row_index, column=column_index, modifier_id=modifier.id
+            )
             session.add(positioned_modifier)
             board_layout.modifiers.append(positioned_modifier)
     session.commit()

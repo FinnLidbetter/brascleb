@@ -9,14 +9,17 @@ from slobsterble.models import GamePlayer
 
 
 class HeadToHeadView(Resource):
-
     @staticmethod
     @jwt_required()
     def get(other_player_id):
         """Get the current user's friend key and their friends."""
-        game_players = db.session.query(GamePlayer).join(GamePlayer.player).filter_by(
-            user_id=current_user.id
-        ).join(GamePlayer.game).all()
+        game_players = (
+            db.session.query(GamePlayer)
+            .join(GamePlayer.player)
+            .filter_by(user_id=current_user.id)
+            .join(GamePlayer.game)
+            .all()
+        )
         wins = 0
         ties = 0
         losses = 0
@@ -41,9 +44,9 @@ class HeadToHeadView(Resource):
             if is_head_to_head and combined_score > best_combined:
                 best_combined = combined_score
         data = {
-            'wins': wins,
-            'losses': losses,
-            'ties': ties,
-            'best_combined_game_score': best_combined,
+            "wins": wins,
+            "losses": losses,
+            "ties": ties,
+            "best_combined_game_score": best_combined,
         }
         return jsonify(data)
