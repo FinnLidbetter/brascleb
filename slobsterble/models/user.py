@@ -4,7 +4,7 @@ import random
 
 from flask_login import UserMixin
 from sqlalchemy import func, PrimaryKeyConstraint, UniqueConstraint
-from sqlalchemy.orm import backref, relation, relationship
+from sqlalchemy.orm import backref, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from slobsterble.app import db
@@ -118,7 +118,7 @@ class Player(db.Model, MetadataMixin, ModelSerializer):
     best_word_score = db.Column(db.Integer, nullable=False, default=0)
     friend_key = db.Column(db.String(FRIEND_KEY_LENGTH), nullable=False,
                            default=random_friend_key)
-    friends = relation(
+    friends = relationship(
         'Player',
         secondary=friends,
         primaryjoin=friends.c.my_player_id == id,

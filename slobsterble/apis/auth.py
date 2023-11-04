@@ -160,7 +160,7 @@ class AdminLoginView(Resource):
             user = User.query.filter_by(username=form.username.data).first()
             if user is None or not user.check_password(form.password.data):
                 flash('Invalid username or password')
-                return redirect(url_for('auth.admin-login'))
+                return redirect(url_for('adminloginview'))
             response = redirect(url_for('admin.index'))
             flask_login.login_user(user)
             return response
