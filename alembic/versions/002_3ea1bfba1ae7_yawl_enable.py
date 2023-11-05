@@ -7,15 +7,12 @@ Create Date: 2020-06-11 21:16:27.361069
 
 """
 import os
-import sys
 from collections import defaultdict
 
 from alembic import op
 from flask import current_app
-from sqlalchemy import orm
-
-sys.path.append(os.getcwd())
 from slobsterble.models import Dictionary, Entry
+from sqlalchemy import orm
 
 # revision identifiers, used by Alembic.
 revision = "3ea1bfba1ae7"

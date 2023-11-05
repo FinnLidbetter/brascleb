@@ -6,7 +6,7 @@ from logging.config import fileConfig
 from alembic import context
 from flask import current_app
 from slobsterble.app import db
-from sqlalchemy import MetaData, engine_from_config, pool
+from sqlalchemy import engine_from_config, pool
 
 sys.path.append(os.getcwd())
 
@@ -25,18 +25,6 @@ if current_app.config["TESTING"]:
 config.set_main_option("sqlalchemy.url", current_app.config["SQLALCHEMY_DATABASE_URI"])
 
 target_metadata = db.metadata
-
-
-def combine_metadata():
-    m = MetaData()
-    for model_name in models.__all__:
-        model_metadata = getattr(getattr(models, model_name), "metadata")
-        for t in model_metadata.tables.values():
-            t.tometadata(m)
-    return m
-
-
-# target_metadata = combine_metadata()
 
 
 def run_migrations_offline():

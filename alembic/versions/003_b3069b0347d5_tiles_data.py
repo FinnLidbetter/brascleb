@@ -6,15 +6,9 @@ Revises: 3ea1bfba1ae7
 Create Date: 2020-06-14 18:40:13.666551
 
 """
-import os
-import sys
 from collections import defaultdict
 
-import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import orm
-
-sys.path.append(os.getcwd())
 from slobsterble.constants import (
     CLASSIC_DISTRIBUTION,
     CLASSIC_LETTER_MULTIPLIERS,
@@ -28,6 +22,7 @@ from slobsterble.models import (
     Tile,
     TileCount,
 )
+from sqlalchemy import orm
 
 # revision identifiers, used by Alembic.
 revision = "b3069b0347d5"

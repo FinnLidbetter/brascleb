@@ -33,12 +33,7 @@ from slobsterble.constants import (
     PASSWORD_RESET_VERIFICATION_SECONDS,
     REGISTRATION_VERIFICATION_SECONDS,
 )
-from slobsterble.forms import (
-    LoginForm,
-    PasswordResetForm,
-    RegisterForm,
-    VerifyEmailForm,
-)
+from slobsterble.forms import LoginForm, PasswordResetForm, VerifyEmailForm
 from slobsterble.models import (
     BoardLayout,
     Device,
@@ -277,7 +272,7 @@ class EmailVerificationView(Resource):
                 status=400,
             )
         if not re.fullmatch(r"[0-9A-Za-z_\-]+", token):
-            return Response(f"Invalid token", status=400)
+            return Response("Invalid token", status=400)
         user = db.session.query(User).filter_by(username=username).one_or_none()
         if user is None or user.verified:
             return Response(
