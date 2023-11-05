@@ -481,7 +481,7 @@ class StateUpdater:
         turn_score,
         primary_word,
         secondary_words,
-        random_generator=None
+        random_generator=None,
     ):
         self.data = data
         self.game_state = game_state

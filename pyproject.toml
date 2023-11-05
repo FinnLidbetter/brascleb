@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools >= 68.2.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slobsterble-finnlidbetter"
+license = {file = "LICENSE"}
+version = "0.0.1"
+authors = [
+    {name = "Finn Lidbetter", email = "finnlidbetter@gmail.com"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Unknown classifier",
+]
+description = "Turn-based crossword game app."
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.urls]
+Homepage = "https://rerack.finnlidbetter.com/"
+Repository = "https://github.com/finnlidbetter/slobsterble/"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages]
+find = {}
+
