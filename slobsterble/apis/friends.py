@@ -1,15 +1,14 @@
 """API view for getting and adding friends."""
 
-from flask import jsonify, request, Response
-from flask_jwt_extended import jwt_required, current_user
+from flask import Response, jsonify, request
+from flask_jwt_extended import current_user, jwt_required
 from flask_restful import Resource
-from sqlalchemy.orm import subqueryload
-from jsonschema import validate as schema_validate, ValidationError
-
+from jsonschema import ValidationError
+from jsonschema import validate as schema_validate
 from slobsterble.app import db
-from slobsterble.constants import FRIEND_KEY_LENGTH, FRIEND_KEY_CHARACTERS
+from slobsterble.constants import FRIEND_KEY_CHARACTERS, FRIEND_KEY_LENGTH
 from slobsterble.models import Player
-
+from sqlalchemy.orm import subqueryload
 
 ADD_FRIEND_SCHEMA = {
     "type": "object",

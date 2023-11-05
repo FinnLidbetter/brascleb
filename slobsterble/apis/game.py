@@ -1,15 +1,14 @@
 """Views related to game play."""
 
-import sqlalchemy.orm.exc
-from flask import Response, request, jsonify
-from flask_restful import Resource
-from flask_jwt_extended import jwt_required, current_user
-
 import slobsterble.api_exceptions
+import sqlalchemy.orm.exc
+from flask import Response, jsonify, request
+from flask_jwt_extended import current_user, jwt_required
+from flask_restful import Resource
 from slobsterble.app import db
 from slobsterble.game_play_controller import (
-    StatelessValidator,
     StatefulValidator,
+    StatelessValidator,
     StateUpdater,
     WordBuilder,
     WordValidator,
@@ -17,7 +16,7 @@ from slobsterble.game_play_controller import (
     get_game_player,
 )
 from slobsterble.models import Move, PlayedTile
-from slobsterble.models.lock import acquire_lock, AcquireLockException
+from slobsterble.models.lock import AcquireLockException, acquire_lock
 from slobsterble.notifications.notify import notify_next_player
 
 

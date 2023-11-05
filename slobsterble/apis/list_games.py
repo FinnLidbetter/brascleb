@@ -1,13 +1,12 @@
 """API for listing active games."""
 
 from flask import jsonify, request
-from flask_jwt_extended import jwt_required, current_user
+from flask_jwt_extended import current_user, jwt_required
 from flask_restful import Resource
-from sqlalchemy import case
-
 from slobsterble.app import db
 from slobsterble.constants import ACTIVE_GAME_LIMIT
 from slobsterble.models import Game, GamePlayer, Player
+from sqlalchemy import case
 
 
 class ListGamesView(Resource):

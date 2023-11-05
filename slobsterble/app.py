@@ -3,20 +3,19 @@ import logging
 import os
 import sys
 
+import slobsterble.settings
 import sqlalchemy.exc
 from flask import Flask, Response
 from flask_admin import Admin
+from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
 from flask_mailman import Mail
 from flask_migrate import Migrate
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
+from slobsterble.notifications import APNSManager
 from sqlalchemy import inspect
 from werkzeug.security import generate_password_hash
-
-import slobsterble.settings
-from slobsterble.notifications import APNSManager
 
 db = SQLAlchemy()
 admin = Admin()
@@ -117,8 +116,8 @@ def init_api(app):
         FreshTokenView,
         FriendsView,
         GameView,
-        IndexView,
         HeadToHeadView,
+        IndexView,
         ListGamesView,
         LoginView,
         LogoutView,
@@ -128,8 +127,8 @@ def init_api(app):
         PlayerSettingsView,
         RegisterView,
         RequestAccountDeletionView,
-        RequestVerificationEmailView,
         RequestPasswordResetView,
+        RequestVerificationEmailView,
         StatsView,
         TileDistributionView,
         TokenRefreshView,

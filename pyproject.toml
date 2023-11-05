@@ -27,3 +27,7 @@ dependencies = {file = ["requirements.txt"]}
 [tool.setuptools.packages]
 find = {}
 
+[tool.isort]
+profile = "black"
+src_paths = ["isort", "test"]
+

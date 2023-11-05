@@ -17,8 +17,8 @@ from sqlalchemy import orm
 sys.path.append(os.getcwd())
 from slobsterble.constants import (
     CLASSIC_DISTRIBUTION,
-    CLASSIC_WORD_MULTIPLIERS,
     CLASSIC_LETTER_MULTIPLIERS,
+    CLASSIC_WORD_MULTIPLIERS,
 )
 from slobsterble.models import (
     BoardLayout,

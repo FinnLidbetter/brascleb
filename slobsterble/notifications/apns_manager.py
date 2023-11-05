@@ -1,7 +1,6 @@
 """Management for the APNs client."""
 
 from flask import current_app
-
 from slobsterble.notifications.apns_client import APNsClient
 from slobsterble.notifications.apns_credentials import TokenCredentials
 from slobsterble.notifications.apns_exceptions import (

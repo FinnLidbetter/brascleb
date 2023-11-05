@@ -1,12 +1,10 @@
 """Models related to games and players in those games."""
 
-from sqlalchemy import func, UniqueConstraint
-from sqlalchemy.orm import relationship
-
 from slobsterble.app import db
 from slobsterble.constants import WORD_LENGTH_MAX
 from slobsterble.models.mixins import ModelMixin, ModelSerializer
-
+from sqlalchemy import UniqueConstraint, func
+from sqlalchemy.orm import relationship
 
 rack = db.Table(
     "rack",

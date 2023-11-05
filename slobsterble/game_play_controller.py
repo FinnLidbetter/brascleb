@@ -5,25 +5,14 @@ from collections import defaultdict, deque, namedtuple
 from enum import Enum
 from random import Random
 
-from flask_jwt_extended import current_user
-from jsonschema import validate as schema_validate, ValidationError
-
-
 import slobsterble.api_exceptions
+from flask_jwt_extended import current_user
+from jsonschema import ValidationError
+from jsonschema import validate as schema_validate
 from slobsterble.app import db
-from slobsterble.constants import (
-    BINGO_BONUS,
-    TILES_ON_RACK_MAX,
-)
+from slobsterble.constants import BINGO_BONUS, TILES_ON_RACK_MAX
 from slobsterble.game_play_schema import TURN_PLAY_SCHEMA
-from slobsterble.models import (
-    Game,
-    PlayedTile,
-    Dictionary,
-    Entry,
-    Tile,
-    Move,
-)
+from slobsterble.models import Dictionary, Entry, Game, Move, PlayedTile, Tile
 from slobsterble.utilities.db_utilities import fetch_or_create
 from slobsterble.utilities.tile_utilities import (
     build_tile_count_map,

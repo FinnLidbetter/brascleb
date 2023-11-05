@@ -4,19 +4,15 @@ import json
 from collections import defaultdict
 
 import pytest
-from sqlalchemy.orm import subqueryload
-
-from slobsterble.api_exceptions import (
-    NewGameFriendException,
-    NewGameSchemaException,
-)
+from slobsterble.api_exceptions import NewGameFriendException, NewGameSchemaException
 from slobsterble.constants import TILES_ON_RACK_MAX
 from slobsterble.game_setup_controller import (
-    StatelessValidator,
     StatefulValidator,
+    StatelessValidator,
     StateUpdater,
 )
 from slobsterble.models import Game, GamePlayer, TileCount
+from sqlalchemy.orm import subqueryload
 
 
 def test_game_no_authorization(client):

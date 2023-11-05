@@ -1,19 +1,18 @@
 """Setup the initial game state."""
 
-from collections import defaultdict
 import datetime
 import random
-
-from jsonschema import validate as schema_validate, ValidationError
-from sqlalchemy.orm import subqueryload
+from collections import defaultdict
 
 import slobsterble.api_exceptions
+from jsonschema import ValidationError
+from jsonschema import validate as schema_validate
 from slobsterble.app import db
 from slobsterble.constants import (
     ACTIVE_GAME_LIMIT,
-    TILES_ON_RACK_MAX,
     GAME_PLAYERS_MAX,
     SPACES_TILES_RATIO_MIN,
+    TILES_ON_RACK_MAX,
 )
 from slobsterble.models import Distribution, Game, GamePlayer, Player, TileCount
 from slobsterble.utilities.tile_utilities import (
@@ -22,7 +21,7 @@ from slobsterble.utilities.tile_utilities import (
     fetch_all_tiles,
     fetch_mapped_tile_counts,
 )
-
+from sqlalchemy.orm import subqueryload
 
 NEW_GAME_SCHEMA = {
     "type": "array",

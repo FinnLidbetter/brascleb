@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 MAX_PAYLOAD_SIZE = 4096
 

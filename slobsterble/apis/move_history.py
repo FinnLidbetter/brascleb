@@ -1,12 +1,11 @@
 """API for viewing the turn history of a game."""
 
-from flask import jsonify, Response
-from flask_jwt_extended import jwt_required, current_user
+from flask import Response, jsonify
+from flask_jwt_extended import current_user, jwt_required
 from flask_restful import Resource
-from sqlalchemy.orm import joinedload, subqueryload
-
 from slobsterble.app import db
 from slobsterble.models import GamePlayer, Move, Player, TileCount, User
+from sqlalchemy.orm import joinedload, subqueryload
 
 
 class MoveHistoryView(Resource):

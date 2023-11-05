@@ -12,29 +12,32 @@ from flask import (
     Response,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
     url_for,
-    jsonify,
 )
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
     current_user,
     decode_token,
-    jwt_required,
     get_jwt,
+    jwt_required,
 )
 from flask_jwt_extended.config import config as jwt_config
 from flask_restful import Resource
-from werkzeug.datastructures import MultiDict
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from slobsterble.app import db, mail
 from slobsterble.constants import (
     PASSWORD_RESET_VERIFICATION_SECONDS,
     REGISTRATION_VERIFICATION_SECONDS,
+)
+from slobsterble.forms import (
+    LoginForm,
+    PasswordResetForm,
+    RegisterForm,
+    VerifyEmailForm,
 )
 from slobsterble.models import (
     BoardLayout,
@@ -45,12 +48,8 @@ from slobsterble.models import (
     User,
     UserVerification,
 )
-from slobsterble.forms import (
-    LoginForm,
-    PasswordResetForm,
-    RegisterForm,
-    VerifyEmailForm,
-)
+from werkzeug.datastructures import MultiDict
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class TokenRefreshView(Resource):

@@ -2,8 +2,8 @@
 
 import pytest
 from flask_jwt_extended import create_access_token
-
-from slobsterble.app import db as database, create_app
+from slobsterble.app import create_app
+from slobsterble.app import db as database
 from slobsterble.models import (
     BoardLayout,
     Dictionary,

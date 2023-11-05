@@ -1,9 +1,8 @@
 """API view for getting head-to-head stats."""
 
 from flask import jsonify
-from flask_jwt_extended import jwt_required, current_user
+from flask_jwt_extended import current_user, jwt_required
 from flask_restful import Resource
-
 from slobsterble.app import db
 from slobsterble.models import GamePlayer
 

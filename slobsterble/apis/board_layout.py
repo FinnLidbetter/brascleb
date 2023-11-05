@@ -1,23 +1,22 @@
 """API for setting a user's preferred Board Layout."""
 
-from flask import jsonify, request, Response
-from flask_jwt_extended import jwt_required, current_user
+from flask import Response, jsonify, request
+from flask_jwt_extended import current_user, jwt_required
 from flask_restful import Resource
-from jsonschema import validate as schema_validate, ValidationError
-from sqlalchemy.orm import joinedload
-
+from jsonschema import ValidationError
+from jsonschema import validate as schema_validate
 from slobsterble.app import db
 from slobsterble.constants import (
-    GAME_COLUMNS_MIN,
     GAME_COLUMNS_MAX,
-    GAME_ROWS_MIN,
+    GAME_COLUMNS_MIN,
     GAME_ROWS_MAX,
-    MULTIPLIER_MIN,
+    GAME_ROWS_MIN,
     MULTIPLIER_MAX,
+    MULTIPLIER_MIN,
 )
 from slobsterble.models import BoardLayout, Modifier, Player, PositionedModifier
 from slobsterble.utilities.db_utilities import fetch_or_create
-
+from sqlalchemy.orm import joinedload
 
 BOARD_LAYOUT_SCHEMA = {
     "type": "object",

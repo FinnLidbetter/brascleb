@@ -3,15 +3,11 @@
 from unittest.mock import patch
 
 import pytest
-
+from slobsterble.api_exceptions import PlayCurrentTurnException, PlaySchemaException
 from slobsterble.game_play_controller import (
-    StatelessValidator,
     StatefulValidator,
+    StatelessValidator,
     fetch_game_state,
-)
-from slobsterble.api_exceptions import (
-    PlayCurrentTurnException,
-    PlaySchemaException,
 )
 from slobsterble.models import Game, GamePlayer
 

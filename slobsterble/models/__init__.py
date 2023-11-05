@@ -1,10 +1,6 @@
 """All models."""
 
-from slobsterble.models.board_layout import (
-    BoardLayout,
-    Modifier,
-    PositionedModifier,
-)
+from slobsterble.models.board_layout import BoardLayout, Modifier, PositionedModifier
 from slobsterble.models.dictionary import Dictionary, Entry
 from slobsterble.models.game import Game, GamePlayer, Move
 from slobsterble.models.lock import Lock

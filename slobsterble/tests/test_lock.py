@@ -4,9 +4,8 @@ import datetime
 
 import pytest
 import sqlalchemy.exc
-
 from slobsterble.models import Lock
-from slobsterble.models.lock import acquire_lock, AcquireLockException
+from slobsterble.models.lock import AcquireLockException, acquire_lock
 
 
 def test_lock_unique(db):

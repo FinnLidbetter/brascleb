@@ -17,7 +17,6 @@ from sqlalchemy import orm
 sys.path.append(os.getcwd())
 from slobsterble.models import Dictionary, Entry
 
-
 # revision identifiers, used by Alembic.
 revision = "3ea1bfba1ae7"
 down_revision = "6296db12b063"

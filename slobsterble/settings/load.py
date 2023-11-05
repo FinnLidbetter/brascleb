@@ -2,9 +2,8 @@
 
 import configparser
 import datetime
-import pathlib
 import os
-
+import pathlib
 
 CONFIG_PATH = os.path.join(os.getenv("HOME"), ".slobsterble.conf")
 DEVELOPER_PATH = os.path.join(os.path.dirname(__file__), "developer.conf")

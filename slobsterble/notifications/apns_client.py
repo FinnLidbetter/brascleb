@@ -4,11 +4,10 @@ import logging
 from enum import Enum
 
 import httpx
-
 from slobsterble.notifications.apns_credentials import TokenCredentials
 from slobsterble.notifications.apns_exceptions import (
-    APNSException,
     APNSConnectionException,
+    APNSException,
     APNSServerException,
     BadDeviceTokenException,
     UnregisteredException,

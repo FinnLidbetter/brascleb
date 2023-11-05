@@ -1,9 +1,8 @@
 from datetime import datetime
 
+from slobsterble.app import db
 from sqlalchemy import func
 from sqlalchemy.inspection import inspect
-
-from slobsterble.app import db
 
 
 class MetadataMixin:

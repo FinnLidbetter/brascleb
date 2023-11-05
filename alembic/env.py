@@ -1,14 +1,12 @@
+import logging
 import os
 import sys
-import logging
 from logging.config import fileConfig
 
 from alembic import context
 from flask import current_app
-from sqlalchemy import engine_from_config, MetaData
-from sqlalchemy import pool
-
 from slobsterble.app import db
+from sqlalchemy import MetaData, engine_from_config, pool
 
 sys.path.append(os.getcwd())
 

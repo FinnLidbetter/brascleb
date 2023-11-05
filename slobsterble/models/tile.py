@@ -1,11 +1,10 @@
 """Models related to information about tiles."""
 
-from sqlalchemy import UniqueConstraint
-from sqlalchemy.orm import relationship
-
 from slobsterble.app import db
 from slobsterble.models.mixins import MetadataMixin, ModelMixin, ModelSerializer
 from slobsterble.models.user import Player
+from sqlalchemy import UniqueConstraint
+from sqlalchemy.orm import relationship
 
 tile_distribution = db.Table(
     "tile_distribution",

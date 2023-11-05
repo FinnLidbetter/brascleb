@@ -3,10 +3,6 @@
 import random
 
 from flask_login import UserMixin
-from sqlalchemy import func, PrimaryKeyConstraint, UniqueConstraint
-from sqlalchemy.orm import backref, relationship
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from slobsterble.app import db
 from slobsterble.constants import (
     DISPLAY_NAME_LENGTH_MAX,
@@ -14,12 +10,10 @@ from slobsterble.constants import (
     FRIEND_KEY_LENGTH,
     UDID_MAX_LENGTH,
 )
-from slobsterble.models.mixins import (
-    MetadataMixin,
-    ModelMixin,
-    ModelSerializer,
-)
-
+from slobsterble.models.mixins import MetadataMixin, ModelMixin, ModelSerializer
+from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint, func
+from sqlalchemy.orm import backref, relationship
+from werkzeug.security import check_password_hash, generate_password_hash
 
 friends = db.Table(
     "friends",

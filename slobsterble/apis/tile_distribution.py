@@ -1,16 +1,15 @@
 """API for retrieving and updating a user's preferred tile distribution."""
 
-from flask import jsonify, request, Response
-from flask_jwt_extended import jwt_required, current_user
+from flask import Response, jsonify, request
+from flask_jwt_extended import current_user, jwt_required
 from flask_restful import Resource
-from jsonschema import validate as schema_validate, ValidationError
-from sqlalchemy.orm import joinedload
-
+from jsonschema import ValidationError
+from jsonschema import validate as schema_validate
 from slobsterble.app import db
-from slobsterble.constants import TILE_VALUE_MAX, TILE_COUNT_MAX
+from slobsterble.constants import TILE_COUNT_MAX, TILE_VALUE_MAX
 from slobsterble.models import Distribution, Player, Tile, TileCount
 from slobsterble.utilities.db_utilities import fetch_or_create
-
+from sqlalchemy.orm import joinedload
 
 TILE_DISTRIBUTION_SCHEMA = {
     "type": "array",

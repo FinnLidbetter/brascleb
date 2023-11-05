@@ -12,8 +12,8 @@ from slobsterble.apis.auth import (
     PasswordResetView,
     RegisterView,
     RequestAccountDeletionView,
-    RequestVerificationEmailView,
     RequestPasswordResetView,
+    RequestVerificationEmailView,
     TokenRefreshView,
 )
 from slobsterble.apis.board_layout import BoardLayoutView
@@ -28,7 +28,6 @@ from slobsterble.apis.new_game import NewGameView
 from slobsterble.apis.player_settings import PlayerSettingsView
 from slobsterble.apis.stats import StatsView
 from slobsterble.apis.tile_distribution import TileDistributionView
-
 
 __all__ = [
     "AdminLoginView",

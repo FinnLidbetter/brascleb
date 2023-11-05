@@ -10,7 +10,6 @@ import time
 from contextlib import contextmanager
 
 import sqlalchemy.exc
-
 from slobsterble.app import db
 from slobsterble.models.mixins import ModelMixin
 
