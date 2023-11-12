@@ -126,7 +126,7 @@ def test_bad_schema(alice_bob_game):
         assert not stateless_validator.validated
 
 
-def test_pass(db, client, alice_headers, alice_bob_game):
+def test_pass(db_session, client, alice_headers, alice_bob_game):
     """Test playing a turn by submitting no data."""
     game, alice_game_player, __ = alice_bob_game
     assert game.turn_number == 0
@@ -134,9 +134,9 @@ def test_pass(db, client, alice_headers, alice_bob_game):
     resp = client.post(f"/api/game/{game.id}", json=[], headers=alice_headers)
     assert resp.status_code == 200
     assert resp.get_data(as_text=True) == "Turn played successfully."
-    game = db.session.query(Game).filter_by(id=game.id).one()
+    game = db_session.query(Game).filter_by(id=game.id).one()
     alice_game_player = (
-        db.session.query(GamePlayer).filter_by(id=alice_game_player.id).one()
+        db_session.query(GamePlayer).filter_by(id=alice_game_player.id).one()
     )
     # Turn number increases.
     assert game.turn_number == 1

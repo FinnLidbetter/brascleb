@@ -13,6 +13,7 @@ from slobsterble.models import (
     Player,
     User,
 )
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -30,10 +31,21 @@ def client(app_fixture):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def db(app_fixture):
+def _db(app_fixture):
     """Setup the database."""
     with app_fixture.app_context():
         yield database
+
+
+@pytest.fixture(scope="function", autouse=True)
+def db_session(_db):
+    connection = _db.engine.connect()
+    transaction = connection.begin()
+    _db.session = scoped_session(session_factory=sessionmaker(bind=connection))
+    yield _db.session
+    transaction.rollback()
+    connection.close()
+    _db.session.remove()
 
 
 def _build_user(name):
@@ -43,11 +55,11 @@ def _build_user(name):
     return user
 
 
-def _build_player(user, db):
+def _build_player(user, session):
     """Build a Player object."""
-    default_dictionary = db.session.query(Dictionary).filter_by(id=1).first()
-    default_board_layout = db.session.query(BoardLayout).filter_by(id=1).first()
-    default_distribution = db.session.query(Distribution).filter_by(id=1).first()
+    default_dictionary = session.query(Dictionary).filter_by(id=1).first()
+    default_board_layout = session.query(BoardLayout).filter_by(id=1).first()
+    default_distribution = session.query(Distribution).filter_by(id=1).first()
     player = Player(
         user=user,
         display_name=user.username,
@@ -58,50 +70,50 @@ def _build_player(user, db):
     return player
 
 
-@pytest.fixture(scope="session", autouse=True)
-def alice(db):
+@pytest.fixture
+def alice(db_session):
     """Create a User and Player called Alice."""
     user = _build_user("Alice")
-    player = _build_player(user, db)
-    db.session.add(user)
-    db.session.add(player)
-    db.session.commit()
+    player = _build_player(user, db_session)
+    db_session.add(user)
+    db_session.add(player)
+    db_session.commit()
     yield user, player
-    db.session.delete(player)
-    db.session.delete(user)
-    db.session.commit()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def bob(db):
-    """Create a User and Player called Bob."""
-    user = _build_user("Bob")
-    player = _build_player(user, db)
-    db.session.add(user)
-    db.session.add(player)
-    db.session.commit()
-    yield user, player
-    db.session.delete(player)
-    db.session.delete(user)
-    db.session.commit()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def carol(db):
-    """Create a User and Player called Carol."""
-    user = _build_user("Carol")
-    player = _build_player(user, db)
-    db.session.add(user)
-    db.session.add(player)
-    db.session.commit()
-    yield user, player
-    db.session.delete(player)
-    db.session.delete(user)
-    db.session.commit()
+    db_session.delete(player)
+    db_session.delete(user)
+    db_session.commit()
 
 
 @pytest.fixture
-def alice_bob_mutual_friends(db, alice, bob):
+def bob(db_session):
+    """Create a User and Player called Bob."""
+    user = _build_user("Bob")
+    player = _build_player(user, db_session)
+    db_session.add(user)
+    db_session.add(player)
+    db_session.commit()
+    yield user, player
+    db_session.delete(player)
+    db_session.delete(user)
+    db_session.commit()
+
+
+@pytest.fixture
+def carol(db_session):
+    """Create a User and Player called Carol."""
+    user = _build_user("Carol")
+    player = _build_player(user, db_session)
+    db_session.add(user)
+    db_session.add(player)
+    db_session.commit()
+    yield user, player
+    db_session.delete(player)
+    db_session.delete(user)
+    db_session.commit()
+
+
+@pytest.fixture
+def alice_bob_mutual_friends(db_session, alice, bob):
     """Make Alice and Bob mutual friends."""
     _, alice_player = alice
     _, bob_player = bob
@@ -109,33 +121,33 @@ def alice_bob_mutual_friends(db, alice, bob):
     initial_bob_friends = bob_player.friends.copy()
     alice_player.friends.append(bob_player)
     bob_player.friends.append(alice_player)
-    db.session.add(alice_player)
-    db.session.add(bob_player)
-    db.session.commit()
+    db_session.add(alice_player)
+    db_session.add(bob_player)
+    db_session.commit()
     yield alice_player, bob_player
     alice_player.friends = initial_alice_friends
     bob_player.friends = initial_bob_friends
-    db.session.add(alice_player)
-    db.session.add(bob_player)
-    db.session.commit()
+    db_session.add(alice_player)
+    db_session.add(bob_player)
+    db_session.commit()
 
 
 @pytest.fixture
-def alice_carol_friend(db, alice, carol):
+def alice_carol_friend(db_session, alice, carol):
     """Make Carol a friend of Alice, but not the converse."""
     _, alice_player = alice
     _, carol_player = carol
     initial_alice_friends = alice_player.friends.copy()
     alice_player.friends.append(carol_player)
-    db.session.add(alice_player)
-    db.session.commit()
+    db_session.add(alice_player)
+    db_session.commit()
     yield alice_player, carol_player
     alice_player.friends = initial_alice_friends
-    db.session.add(alice_player)
-    db.session.commit()
+    db_session.add(alice_player)
+    db_session.commit()
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture
 def alice_headers(alice):
     """Get access token headers for Alice."""
     alice_user, _ = alice
@@ -144,7 +156,7 @@ def alice_headers(alice):
     return headers
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture
 def bob_headers(bob):
     """Get access token headers for Bob."""
     bob_user, _ = bob
@@ -153,7 +165,7 @@ def bob_headers(bob):
     return headers
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture
 def carol_headers(carol):
     """Get access token headers for Carol."""
     carol_user, _ = carol
@@ -163,7 +175,7 @@ def carol_headers(carol):
 
 
 @pytest.fixture
-def alice_bob_game(alice, bob, db):
+def alice_bob_game(alice, bob, db_session):
     """Setup a Game between Alice and Bob."""
     _, alice_player = alice
     _, bob_player = bob
@@ -171,19 +183,19 @@ def alice_bob_game(alice, bob, db):
     alice_game_player = GamePlayer(player=alice_player, game=game, turn_order=0)
     bob_game_player = GamePlayer(player=bob_player, game=game, turn_order=1)
     game.game_player_to_play = alice_game_player
-    db.session.add(game)
-    db.session.add(alice_game_player)
-    db.session.add(bob_game_player)
-    db.session.commit()
+    db_session.add(game)
+    db_session.add(alice_game_player)
+    db_session.add(bob_game_player)
+    db_session.commit()
     yield game, alice_game_player, bob_game_player
-    db.session.delete(bob_game_player)
-    db.session.delete(alice_game_player)
-    db.session.delete(game)
-    db.session.commit()
+    db_session.delete(bob_game_player)
+    db_session.delete(alice_game_player)
+    db_session.delete(game)
+    db_session.commit()
 
 
 @pytest.fixture
-def alice_bob_carol_game(alice, bob, carol, db):
+def alice_bob_carol_game(alice, bob, carol, db_session):
     """Setup a Game between Alice, Bob, and Carol."""
     _, alice_player = alice
     _, bob_player = bob
@@ -193,14 +205,14 @@ def alice_bob_carol_game(alice, bob, carol, db):
     bob_game_player = GamePlayer(player=bob_player, game=game, turn_order=1)
     carol_game_player = GamePlayer(player=carol_player, game=game, turn_order=2)
     game.game_player_to_play = alice_game_player
-    db.session.add(game)
-    db.session.add(alice_game_player)
-    db.session.add(bob_game_player)
-    db.session.add(carol_game_player)
-    db.session.commit()
+    db_session.add(game)
+    db_session.add(alice_game_player)
+    db_session.add(bob_game_player)
+    db_session.add(carol_game_player)
+    db_session.commit()
     yield game, alice_game_player, bob_game_player, carol_game_player
-    db.session.delete(carol_game_player)
-    db.session.delete(bob_game_player)
-    db.session.delete(alice_game_player)
-    db.session.delete(game)
-    db.session.commit()
+    db_session.delete(carol_game_player)
+    db_session.delete(bob_game_player)
+    db_session.delete(alice_game_player)
+    db_session.delete(game)
+    db_session.commit()

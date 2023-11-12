@@ -40,7 +40,9 @@ def test_no_moves(client, alice_headers, alice_bob_game):
         assert player_moves["moves"] == []
 
 
-def test_one_regular_move(client, alice_headers, bob_headers, alice_bob_game, db):
+def test_one_regular_move(
+    client, alice_headers, bob_headers, alice_bob_game, db_session
+):
     """Test fetching move history from a game with one word move played."""
     game, alice_game_player, bob_game_player = alice_bob_game
     move = slobsterble.models.Move(
@@ -51,8 +53,8 @@ def test_one_regular_move(client, alice_headers, bob_headers, alice_bob_game, db
         score=15,
         played_time=datetime.datetime.now(),
     )
-    db.session.add(move)
-    db.session.commit()
+    db_session.add(move)
+    db_session.commit()
     # Results are the same for both players.
     for headers in alice_headers, bob_headers:
         resp = client.get(f"/api/game/{game.id}/move-history", headers=headers)
@@ -76,36 +78,34 @@ def test_one_regular_move(client, alice_headers, bob_headers, alice_bob_game, db
                 "turn_number": 0,
             }
         ]
-    db.session.delete(move)
-    db.session.commit()
 
 
-def test_exchange(client, alice_headers, alice_bob_game, db):
+def test_exchange(client, alice_headers, alice_bob_game, db_session):
     """Test that a move where tiles were exchanged serializes correctly."""
     game, alice_game_player, bob_game_player = alice_bob_game
     a_3 = (
-        db.session.query(slobsterble.models.TileCount)
+        db_session.query(slobsterble.models.TileCount)
         .filter_by(count=3)
         .join(slobsterble.models.TileCount.tile)
         .filter_by(letter="a", is_blank=False)
         .first()
     )
     blank_1 = (
-        db.session.query(slobsterble.models.TileCount)
+        db_session.query(slobsterble.models.TileCount)
         .filter_by(count=1)
         .join(slobsterble.models.TileCount.tile)
         .filter_by(letter=None, is_blank=True)
         .first()
     )
     z_1 = (
-        db.session.query(slobsterble.models.TileCount)
+        db_session.query(slobsterble.models.TileCount)
         .filter_by(count=1)
         .join(slobsterble.models.TileCount.tile)
         .filter_by(letter="z", is_blank=False)
         .first()
     )
     c_2 = (
-        db.session.query(slobsterble.models.TileCount)
+        db_session.query(slobsterble.models.TileCount)
         .filter_by(count=2)
         .join(slobsterble.models.TileCount.tile)
         .filter_by(letter="c", is_blank=False)
@@ -121,8 +121,8 @@ def test_exchange(client, alice_headers, alice_bob_game, db):
         exchanged_tiles=exchanged_tiles,
         played_time=datetime.datetime.now(),
     )
-    db.session.add(move)
-    db.session.commit()
+    db_session.add(move)
+    db_session.commit()
     resp = client.get(f"/api/game/{game.id}/move-history", headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
@@ -170,11 +170,9 @@ def test_exchange(client, alice_headers, alice_bob_game, db):
         },
     ]
     assert moves[0]["exchanged_tiles"] == expected_exchanged
-    db.session.delete(move)
-    db.session.commit()
 
 
-def test_pass_move(client, alice_headers, alice_bob_game, db):
+def test_pass_move(client, alice_headers, alice_bob_game, db_session):
     """Test getting move history including a passed turn."""
     game, alice_game_player, bob_game_player = alice_bob_game
     move = slobsterble.models.Move(
@@ -187,8 +185,8 @@ def test_pass_move(client, alice_headers, alice_bob_game, db):
         played_tiles=[],
         played_time=datetime.datetime.now(),
     )
-    db.session.add(move)
-    db.session.commit()
+    db_session.add(move)
+    db_session.commit()
     resp = client.get(f"/api/game/{game.id}/move-history", headers=alice_headers)
     data = json.loads(resp.get_data())
     assert resp.status_code == 200
@@ -204,12 +202,10 @@ def test_pass_move(client, alice_headers, alice_bob_game, db):
             "turn_number": 0,
         }
     ]
-    db.session.delete(move)
-    db.session.commit()
 
 
 def test_three_player_game(
-    client, alice_headers, bob_headers, carol_headers, alice_bob_carol_game, db
+    client, alice_headers, bob_headers, carol_headers, alice_bob_carol_game, db_session
 ):
     """Test getting history for multiple moves in a three player game."""
     game, alice_game_player, bob_game_player, carol_game_player = alice_bob_carol_game
@@ -233,7 +229,7 @@ def test_three_player_game(
         played_time=now,
     )
     z_1 = (
-        db.session.query(slobsterble.models.TileCount)
+        db_session.query(slobsterble.models.TileCount)
         .filter_by(count=1)
         .join(slobsterble.models.TileCount.tile)
         .filter_by(letter="Z", is_blank=False)
@@ -259,8 +255,8 @@ def test_three_player_game(
         played_time=now,
     )
     for move in [move_0, move_1, move_2, move_3]:
-        db.session.add(move)
-    db.session.commit()
+        db_session.add(move)
+    db_session.commit()
     expected_alice_moves = [
         {
             "primary_word": None,
@@ -315,6 +311,3 @@ def test_three_player_game(
         assert alice_moves == expected_alice_moves
         assert bob_moves == expected_bob_moves
         assert carol_moves == expected_carol_moves
-    for move in [move_0, move_1, move_2, move_3]:
-        db.session.delete(move)
-    db.session.commit()

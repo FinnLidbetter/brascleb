@@ -72,13 +72,13 @@ def test_valid_friends(alice_bob_mutual_friends, alice_carol_friend):
         stateful_validator.validate()
 
 
-def test_update_state(db, alice_bob_mutual_friends):
+def test_update_state(db_session, alice_bob_mutual_friends):
     """Test creating a game."""
     alice_player, bob_player = alice_bob_mutual_friends
     state_updater = StateUpdater([bob_player.id], alice_player)
     state_updater.update_state()
     created_game = (
-        db.session.query(Game)
+        db_session.query(Game)
         .options(
             subqueryload(Game.game_players)
             .subqueryload(GamePlayer.rack)
@@ -110,9 +110,6 @@ def test_update_state(db, alice_bob_mutual_friends):
         game_player.turn_order for game_player in created_game.game_players
     }
     assert turn_order_numbers == {0, 1}
-    # Cleanup by deleting the game that we just created.
-    db.session.delete(created_game)
-    db.session.commit()
 
 
 def test_valid_gets(
@@ -147,16 +144,12 @@ def test_valid_gets(
     assert carol_data == {"friends": []}
 
 
-def test_valid_post(client, db, alice_bob_mutual_friends, alice_headers):
+def test_valid_post(client, db_session, alice_bob_mutual_friends, alice_headers):
     """Test submitting a valid POST to the New Game API."""
     alice_player, bob_player = alice_bob_mutual_friends
     resp = client.post("/api/new-game", json=[bob_player.id], headers=alice_headers)
     assert resp.status_code == 200
     assert resp.get_data(as_text=True) == "1"
-    # Cleanup by deleting the game that we just created.
-    created_game = db.session.query(Game).order_by(Game.created.desc()).first()
-    db.session.delete(created_game)
-    db.session.commit()
 
 
 def test_invalid_post(client, bob, alice_headers):
