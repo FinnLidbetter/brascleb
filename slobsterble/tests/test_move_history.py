@@ -228,6 +228,8 @@ def test_three_player_game(
         secondary_words=None,
         played_time=now,
     )
+    db_session.add(move_0)
+    db_session.add(move_1)
     z_1 = (
         db_session.query(slobsterble.models.TileCount)
         .filter_by(count=1)
@@ -254,8 +256,8 @@ def test_three_player_game(
         secondary_words="go",
         played_time=now,
     )
-    for move in [move_0, move_1, move_2, move_3]:
-        db_session.add(move)
+    db_session.add(move_2)
+    db_session.add(move_3)
     db_session.commit()
     expected_alice_moves = [
         {

@@ -120,6 +120,8 @@ class StateUpdater:
         """Create the Game and GamePlayer objects and commit to the database."""
         base_game = self._build_base_game()
         base_game_players = self._build_game_players(base_game)
+        db.session.add(base_game)
+        db.session.add_all(base_game_players)
         tile_objects = fetch_all_tiles(db.session)
         tile_object_map = build_tile_object_map(tile_objects)
         distribution_tile_counts = fetch_distribution_tile_counts(
@@ -150,8 +152,6 @@ class StateUpdater:
             db.session, bag_tile_count_map, tile_object_map
         )
         base_game.bag_tiles = list(mapped_bag_tile_counts.values())
-        db.session.add(base_game)
-        db.session.add_all(base_game_players)
         db.session.commit()
         return base_game.id, base_game_players
 

@@ -40,7 +40,7 @@ def _db(app_fixture):
 @pytest.fixture(scope="function", autouse=True)
 def db_session(_db):
     connection = _db.engine.connect()
-    transaction = connection.begin()
+    transaction = connection.begin_nested()
     _db.session = scoped_session(session_factory=sessionmaker(bind=connection))
     yield _db.session
     transaction.rollback()
