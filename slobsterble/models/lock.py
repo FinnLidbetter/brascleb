@@ -66,7 +66,7 @@ def acquire_lock(key, expire_seconds=60, block_seconds=None):
                 time.sleep(0.1)
         if not lock_acquired:
             raise AcquireLockException(f"Failed to acquire lock for key: {key}")
-        db.session.commit()
+        db.session.flush()
         yield
     except sqlalchemy.exc.IntegrityError:
         lock_acquired = False
@@ -76,7 +76,7 @@ def acquire_lock(key, expire_seconds=60, block_seconds=None):
     finally:
         if lock_acquired:
             db.session.query(Lock).filter(Lock.key == key).delete()
-            db.session.commit()
+            db.session.flush()
 
 
 class AcquireLockException(Exception):
