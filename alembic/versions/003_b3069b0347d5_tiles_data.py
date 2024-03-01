@@ -6,6 +6,7 @@ Revises: 3ea1bfba1ae7
 Create Date: 2020-06-14 18:40:13.666551
 
 """
+
 from collections import defaultdict
 
 from alembic import op

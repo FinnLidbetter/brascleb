@@ -19,7 +19,8 @@ class ListGamesView(Resource):
         completed (incomplete first) first, and the time that the game was
         started (more recent, first) second.
         """
-        if request.headers.get("Accept-version") == "v2":
+        version = int(request.headers.get("Accept-version").strip("v"))
+        if version >= 2:
             return self._get_version_2()
         else:
             return self._get_version_1()
@@ -32,7 +33,7 @@ class ListGamesView(Resource):
             .join(GamePlayer.player)
             .filter(Player.user_id == current_user.id)
             .order_by(
-                case([(Game.completed.is_(None), 0)], else_=1),
+                case((Game.completed.is_(None), 0), else_=1),
                 Game.completed.desc(),
                 Game.started.desc(),
             )
@@ -71,7 +72,7 @@ class ListGamesView(Resource):
             .join(GamePlayer.player)
             .filter(Player.user_id == current_user.id)
             .order_by(
-                case([(Game.completed.is_(None), 0)], else_=1),
+                case((Game.completed.is_(None), 0), else_=1),
                 Game.completed.desc(),
                 Game.started.desc(),
             )

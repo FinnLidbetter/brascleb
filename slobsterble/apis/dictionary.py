@@ -23,10 +23,8 @@ class TwoLetterWordView(Resource):
         accessible_game = (
             db.session.query(Game)
             .filter(Game.id == game_id)
-            .join(
-                Game.game_players,
-                GamePlayer.player,
-            )
+            .join(Game.game_players)
+            .join(GamePlayer.player)
             .filter(Player.user_id == current_user.id)
             .one_or_none()
         )
@@ -56,7 +54,8 @@ class DictionaryView(Resource):
         has_game_access = (
             db.session.query(Game)
             .filter(Game.id == game_id)
-            .join(Game.game_players, GamePlayer.player)
+            .join(Game.game_players)
+            .join(GamePlayer.player)
             .filter(Player.user_id == current_user.id)
             .one_or_none()
         )
@@ -66,7 +65,8 @@ class DictionaryView(Resource):
         game_entry_tuple = (
             db.session.query(Game, Entry)
             .filter(Game.id == game_id)
-            .join(Game.dictionary, Dictionary.entries)
+            .join(Game.dictionary)
+            .join(Dictionary.entries)
             .filter(Entry.word == word)
             .first()
         )

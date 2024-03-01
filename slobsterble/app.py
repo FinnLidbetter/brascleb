@@ -1,4 +1,5 @@
 """Initialise the Flask app."""
+
 import logging
 import os
 import sys

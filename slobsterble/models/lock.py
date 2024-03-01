@@ -5,6 +5,7 @@ At the current scale, using a database locking mechanism is
 acceptable. It should be replaced with a queueing mechanism
 in the future if performance problems arise.
 """
+
 import datetime
 import time
 from contextlib import contextmanager
@@ -75,7 +76,8 @@ def acquire_lock(key, expire_seconds=60, block_seconds=None):
         )
     finally:
         if lock_acquired:
-            db.session.query(Lock).filter(Lock.key == key).delete()
+            Lock.query.filter(Lock.key == key).delete()
+            # db.session.query(Lock).filter(Lock.key == key).delete()
             db.session.flush()
 
 

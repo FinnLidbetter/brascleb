@@ -534,9 +534,9 @@ class StateUpdater:
         move = Move(
             game_player_id=self.game_player.id,
             primary_word=self.primary_word,
-            secondary_words=None
-            if self.secondary_words is None
-            else ",".join(self.secondary_words),
+            secondary_words=(
+                None if self.secondary_words is None else ",".join(self.secondary_words)
+            ),
             rack_tiles=initial_rack,
             exchanged_tiles=exchanged_tiles,
             played_tiles=played_tiles,
@@ -554,7 +554,10 @@ class StateUpdater:
         if self.turn_score > self.game_player.player.best_word_score:
             self.game_player.player.best_word_score = self.turn_score
         game_over = False
-        if not self.game_player.rack and not self.game_state.bag_tiles:
+        empty_rack_and_no_tiles = bool(
+            not self.game_player.rack and not self.game_state.bag_tiles
+        )
+        if empty_rack_and_no_tiles or self._is_game_end_by_pass():
             game_over = True
             self.game_state.completed = played_time
             remaining_sum = 0
@@ -565,7 +568,8 @@ class StateUpdater:
                 )
                 curr_game_player.score -= player_rack_tile_sum
                 remaining_sum += player_rack_tile_sum
-            self.game_player.score += remaining_sum
+            if empty_rack_and_no_tiles:
+                self.game_player.score += remaining_sum
             best_score = 0
             best_score_count = 0
             for curr_game_player in self.game_state.game_players:
@@ -679,6 +683,27 @@ class StateUpdater:
             )[0]
             played_tiles.append(played_tile)
         return played_tiles
+
+    def _is_game_end_by_pass(self):
+        """
+        Return true the last 2*num_players moves were passes.
+
+        This includes the current move.
+        """
+        if self.data:
+            return False
+        game_players = self.game_state.game_players
+        moves = []
+        for game_player in game_players:
+            moves.extend(game_player.moves)
+        moves.sort(key=lambda move: -move.turn_number)
+        num_players = len(self.game_state.game_players)
+        if len(moves) <= 2 * num_players - 1:
+            return False
+        for move in moves[: 2 * num_players]:
+            if move.played_tiles or move.exchanged_tiles:
+                return False
+        return True
 
 
 def get_game_player(game_state):

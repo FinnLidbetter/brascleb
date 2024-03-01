@@ -23,10 +23,8 @@ from slobsterble.notifications.notify import notify_next_player
 class GameView(Resource):
     @jwt_required()
     def get(self, game_id):
-        if request.headers.get("Accept-version") == "v2":
-            return self._versioned_get(game_id, 2)
-        else:
-            return self._versioned_get(game_id, 1)
+        version = int(request.headers.get("Accept-version").strip("v"))
+        return self._versioned_get(game_id, version)
 
     @staticmethod
     def _versioned_get(game_id, version):
@@ -112,7 +110,7 @@ class GameView(Resource):
                 "display_name": prev_play_player.player.display_name,
                 "exchanged_count": exchanged_count,
             }
-            if version == 2:
+            if version >= 2:
                 prev_move_played_tiles = prev_move.played_tiles
                 serialized_prev_move_tiles = PlayedTile.serialize_list(
                     prev_move_played_tiles
@@ -121,6 +119,13 @@ class GameView(Resource):
             serialized_game_state["prev_move"] = serialized_prev_move
         else:
             serialized_game_state["prev_move"] = None
+        if version >= 3:
+            if game_state.completed is None:
+                serialized_game_state["completed"] = None
+            else:
+                serialized_game_state["completed"] = int(
+                    game_state.completed.timestamp()
+                )
         serialized_game_state["rack"] = serialized_user_rack["rack"]
         serialized_game_state["fetcher_player_id"] = current_game_player.player_id
         return jsonify(serialized_game_state)
@@ -174,3 +179,5 @@ class GameView(Resource):
                 f"after at least {lock_expiry_seconds} seconds.",
                 status=500,
             )
+        finally:
+            db.session.commit()
